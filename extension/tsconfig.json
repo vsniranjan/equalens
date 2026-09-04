@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["DOM", "ES2022"],
+    "types": ["chrome"]
+  },
+  "include": ["src", "manifest.config.ts", "vite.config.ts"]
+}

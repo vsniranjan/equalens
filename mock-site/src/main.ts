@@ -1,0 +1,7 @@
+import "@fontsource/inter/300.css";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/jetbrains-mono/400.css";
+import "./styles.css";
+
+document.documentElement.classList.add("js-ready");

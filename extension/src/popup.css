@@ -1,0 +1,32 @@
+:root {
+  color: #0e1b1d;
+  font-family: Inter, system-ui, sans-serif;
+  background: #eaf4f4;
+}
+
+body {
+  width: 320px;
+  margin: 0;
+}
+
+.shell {
+  padding: 24px;
+}
+
+.eyebrow {
+  color: #0f5257;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+h1 {
+  margin: 8px 0;
+  font-size: 28px;
+}
+
+p {
+  margin: 0;
+  color: #345052;
+  line-height: 1.5;
+}
