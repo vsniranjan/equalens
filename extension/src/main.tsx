@@ -5,9 +5,15 @@ import "./popup.css";
 function App() {
   return (
     <main className="shell">
-      <span className="eyebrow">SYSTEM READY</span>
-      <h1>EquaLens</h1>
-      <p>The extension foundation is active. Selection and scan tools arrive in Phase 3.</p>
+      <header className="brand">
+        <span className="brand-orb" aria-hidden="true" />
+        <h1>EquaLens</h1>
+      </header>
+      <p>Select text on a page or open the edge orb to inspect an element.</p>
+      <div className="status">
+        <strong>Overlay ready</strong>
+        <span>Analysis requests stay behind the Cloudflare Worker.</span>
+      </div>
     </main>
   );
 }

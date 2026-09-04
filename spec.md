@@ -108,8 +108,18 @@ stays fully usable.
 - **Element picking**: mini-menu "Inspect element" mode; `mouseover` outlines
   hovered blocks (via a positioned overlay rect, not by touching host styles);
   click captures `outerHTML` (trimmed to 8 KB) + selector.
+- The buddy mini-menu includes **Inspect element** alongside Scan page, Open
+  panel, and Settings so element-picking mode is directly reachable.
+- Escape cancels selection or element-picking state. Keyboard focus remains
+  visible inside the overlay, and opening the buddy menu moves focus to its
+  first action.
 - Payload to API always includes: selected text/HTML, ~1500 chars of
   surrounding context, page title, URL, and user's interest categories.
+
+The content/background boundary uses typed messages. One-shot API calls use
+`chrome.runtime.sendMessage`; scan streaming uses a named runtime port that
+relays only complete NDJSON lines and emits explicit open, data, complete, and
+error messages. The background worker owns the API origin and shared header.
 
 ### 2.5 Selection popup — four actions
 

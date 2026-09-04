@@ -2,6 +2,7 @@
   color: #0e1b1d;
   font-family: Inter, system-ui, sans-serif;
   background: #eaf4f4;
+  color-scheme: light dark;
 }
 
 body {
@@ -13,20 +14,70 @@ body {
   padding: 24px;
 }
 
-.eyebrow {
-  color: #0f5257;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-orb {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #2d7f85;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #dcffff 0 7%, #73d4d7 19%, #168189 48%, #003a3e 76%);
+  box-shadow: inset -2px -3px 5px rgb(0 32 34 / 0.4);
 }
 
 h1 {
-  margin: 8px 0;
-  font-size: 28px;
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  line-height: 28px;
 }
 
 p {
-  margin: 0;
-  color: #345052;
+  max-width: 32ch;
+  margin: 16px 0 20px;
+  color: #334f51;
   line-height: 1.5;
+}
+
+.status {
+  display: grid;
+  gap: 3px;
+  padding-top: 14px;
+  border-top: 1px solid #c4d9da;
+}
+
+.status strong {
+  font-size: 13px;
+}
+
+.status span {
+  color: #466164;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #e3f6f7;
+    background: #102426;
+  }
+
+  p,
+  .status span {
+    color: #b4cbcd;
+  }
+
+  .status {
+    border-color: #365154;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+  }
 }
