@@ -315,8 +315,8 @@ explanation. (Spec §2.5, §4.4)
 Tasks:
 1. **Citation library** (`shared/citations.ts`, spec §4.4): 12–15 entries
    `{tag, claim, source, year, url}` covering crash-test dummy history &
-   the ~"women 47% more likely to be seriously injured" statistic
-   (University of Virginia, 2019), PPE fit, drug-dosage trial exclusion,
+   the "belted female occupants had 73% greater odds of serious injury"
+   statistic (University of Virginia, 2019), PPE fit, drug-trial exclusion,
    voice-recognition gaps, office temperature standards, smartphone/hand
    size, seatbelt & pregnancy. **Verify each claim + source via web search
    during this phase** — the honesty of "verified source" badges depends on

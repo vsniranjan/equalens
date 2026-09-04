@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { flushSync } from "react-dom";
+import type { AnalyzeRequest } from "@equalens/shared/types";
+import { AnalysisCard, type AnalysisIndicator, type AnalyzeHandler } from "./analysis-card";
 import type { ViewportRect } from "./selection";
 import { OVERLAY_CSS } from "./overlay-styles";
 
@@ -10,6 +12,7 @@ export type OrbStatus = { mode: "idle" | "attentive" | "thinking" } | { mode: "a
 export interface OverlaySelection {
   text: string;
   rect: ViewportRect;
+  request: AnalyzeRequest;
 }
 
 export interface OverlayController {
@@ -24,6 +27,7 @@ export interface OverlayController {
 interface OverlayOptions {
   document?: Document;
   onAction?: (action: OrbAction) => void;
+  onAnalyze?: AnalyzeHandler;
 }
 
 interface OverlayViewProps {
@@ -33,6 +37,7 @@ interface OverlayViewProps {
   inspecting: boolean;
   viewport: { width: number; height: number };
   onAction: (action: OrbAction) => void;
+  onAnalyze: AnalyzeHandler;
 }
 
 let active: { document: Document; controller: OverlayController } | null = null;
@@ -73,6 +78,7 @@ export function mountOverlay(options: OverlayOptions = {}): OverlayController {
         inspecting={inspecting}
         viewport={{ width: view.innerWidth, height: view.innerHeight }}
         onAction={options.onAction ?? (() => undefined)}
+        onAnalyze={options.onAnalyze ?? (() => Promise.reject(new Error("Analysis is unavailable.")))}
       />,
     ));
   };
@@ -107,10 +113,18 @@ export function mountOverlay(options: OverlayOptions = {}): OverlayController {
   return controller;
 }
 
-function OverlayView({ selection, status, inspectionRect, inspecting, viewport, onAction }: OverlayViewProps) {
+function OverlayView({ selection, status, inspectionRect, inspecting, viewport, onAction, onAnalyze }: OverlayViewProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [analysisIndicator, setAnalysisIndicator] = useState<AnalysisIndicator>({ mode: "idle" });
   const firstAction = useRef<HTMLButtonElement>(null);
-  const effectiveMode = status.mode === "idle" && selection ? "attentive" : status.mode;
+  const effectiveMode = analysisIndicator.mode === "thinking"
+    ? "thinking"
+    : analysisIndicator.mode === "alert"
+      ? "alert"
+      : status.mode === "idle" && selection ? "attentive" : status.mode;
+  const alertCount = status.mode === "alert"
+    ? status.count
+    : analysisIndicator.mode === "alert" ? analysisIndicator.count : 0;
   const position = buddyPosition(selection?.rect ?? null, viewport);
   const side = position.x > viewport.width / 2 ? "left" : "right";
 
@@ -157,8 +171,8 @@ function OverlayView({ selection, status, inspectionRect, inspecting, viewport, 
           onClick={() => setMenuOpen((open) => !open)}
         >
           <span className="eqx-buddy-core" aria-hidden="true" />
-          {status.mode === "alert" && (
-            <span className="eqx-alert-count" data-testid="alert-count">{Math.min(status.count, 99)}</span>
+          {effectiveMode === "alert" && (
+            <span className="eqx-alert-count" data-testid="alert-count">{Math.min(alertCount, 99)}</span>
           )}
         </button>
 
@@ -174,10 +188,19 @@ function OverlayView({ selection, status, inspectionRect, inspecting, viewport, 
           </div>
         )}
 
-        {!menuOpen && selection && (
-          <div className="eqx-popover eqx-selection-note" data-side={side} role="status">
-            <strong>Selection ready</strong>
-            <span>{selection.text}</span>
+        {selection && (
+          <div
+            className="eqx-popover eqx-analysis-card"
+            data-side={side}
+            data-vertical={position.y > viewport.height / 2 ? "bottom" : "top"}
+            hidden={menuOpen}
+            style={{ maxHeight: position.y > viewport.height / 2 ? position.y + 32 : viewport.height - position.y - 12 }}
+          >
+            <AnalysisCard
+              request={selection.request}
+              onAnalyze={onAnalyze}
+              onIndicatorChange={setAnalysisIndicator}
+            />
           </div>
         )}
       </div>

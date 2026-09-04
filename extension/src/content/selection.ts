@@ -37,7 +37,7 @@ export function captureTextSelection(
   const element = closestElement(range.commonAncestorContainer)
     ?? closestElement(selection.anchorNode)
     ?? closestElement(selection.focusNode);
-  if (!element || element.closest("#equalens-root")) return null;
+  if (!element || isInsideOverlay(element)) return null;
 
   const rect = usableRect(range);
   if (!rect) return null;
@@ -72,6 +72,12 @@ export function toViewportRect(rect: Pick<DOMRect, "top" | "right" | "bottom" | 
 function closestElement(node: Node | null): Element | null {
   if (node instanceof Element) return node;
   return node?.parentElement ?? null;
+}
+
+function isInsideOverlay(element: Element): boolean {
+  const root = element.getRootNode();
+  return element.closest("#equalens-root") !== null
+    || (root instanceof ShadowRoot && root.host.id === "equalens-root");
 }
 
 function usableRect(range: Range): ViewportRect | null {

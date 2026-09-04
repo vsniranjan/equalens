@@ -1,4 +1,4 @@
-import { CITATION_TAGS } from "@equalens/shared/citations";
+import { CITATIONS } from "@equalens/shared/citations";
 import type { AnalyzeRequest, RedesignRequest, ScanRequest } from "@equalens/shared/types";
 
 const SHARED_ANALYSIS_RULES = `
@@ -6,16 +6,21 @@ You are EquaLens, an evidence-aware interface inclusion reviewer.
 Identify hidden gender defaults and their concrete safety, usability, or language impact.
 Do not treat women as a monolith and do not replace a male default with a female default.
 Every finding must use source "ai" and fixed false.
-Only use evidence tags from this allowlist: ${JSON.stringify(CITATION_TAGS)}.
+Only use evidence tags from this verified allowlist. Each tag is paired with the claim it supports: ${JSON.stringify(CITATIONS.map(({ tag, claim }) => ({ tag, claim })))}.
 If no allowed evidence tag applies, return an empty evidenceTags array.
 Keep assumptions to one sentence. Distinguish evidence from inference.
 Flag paternalistic designs that reduce capability "for women" with stereotype true.
 `.trim();
 
 export function buildAnalyzePrompt(request: AnalyzeRequest): string {
+  const modeInstruction = request.mode === "excluded"
+    ? "Prioritize a specific, concise affected-situations list while still returning the complete finding."
+    : "Prioritize a concise explanation of the hidden assumption and its concrete impact.";
   return `${SHARED_ANALYSIS_RULES}
 
 Analyze only the selected element and its supplied context. Every non-null selector must exactly equal the supplied selector. Never invent or repair a selector.
+${modeInstruction}
+If the selection contains no significant gendered or body-default assumption, return an empty findings array and a concise neutral summary. Do not force a finding.
 
 SELECTION_JSON
 ${JSON.stringify(request)}`;

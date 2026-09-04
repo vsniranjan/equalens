@@ -5,5 +5,6 @@
   "context": "Controls and reach specifications for the Meridian S4 cockpit.",
   "pageTitle": "Meridian S4 | Meridian Motors",
   "pageUrl": "https://meridian-motors.example/",
-  "categories": ["sizing-fit", "safety"]
+  "categories": ["sizing-fit", "safety"],
+  "mode": "explain"
 }

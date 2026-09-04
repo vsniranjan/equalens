@@ -10,6 +10,7 @@ export type Category = "safety" | "usability" | "language";
 export type Confidence = "high" | "medium" | "low";
 
 export type InterestCategory = "safety" | "sizing-fit" | "language" | "everyday-usability";
+export type AnalyzeMode = "explain" | "excluded";
 
 export interface Finding {
   id: string;
@@ -50,6 +51,7 @@ export interface AnalyzeRequest {
   pageTitle: string;
   pageUrl: string;
   categories: InterestCategory[];
+  mode?: AnalyzeMode;
 }
 
 export interface AnalyzeResponse {

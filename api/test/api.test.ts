@@ -79,7 +79,7 @@ describe("Gemini endpoints", () => {
 
   it("analyzes a selection with structured output and caches the response", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async () =>
-      geminiResponse({ findings: [finding], summary: "The control assumes one hand-size baseline." }),
+      geminiResponse({ findings: [{ ...finding, stereotype: null }], summary: "The control assumes one hand-size baseline." }),
     );
 
     const first = await post("/analyze", analyzeRequest);
@@ -95,7 +95,11 @@ describe("Gemini endpoints", () => {
 
     const [url, init] = fetchSpy.mock.calls[0] ?? [];
     const geminiBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    const geminiContents = geminiBody.contents as Array<{ parts: Array<{ text: string }> }> | undefined;
+    const geminiPrompt = geminiContents?.[0]?.parts[0]?.text ?? "";
     expect(JSON.stringify(geminiBody)).toContain("responseSchema");
+    expect(geminiPrompt).toContain('"mode":"explain"');
+    expect(geminiPrompt).toContain("73% greater odds");
     expect(String(url)).toContain("gemini-3.6-flash:generateContent");
     expect(geminiBody).toMatchObject({
       generationConfig: {

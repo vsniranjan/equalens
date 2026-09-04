@@ -48,7 +48,7 @@ describe("content script runtime", () => {
 
     const shadow = document.querySelector<HTMLDivElement>("#equalens-root")!.shadowRoot!;
     expect(shadow.querySelector('[data-testid="buddy-orb"]')?.getAttribute("data-mode")).toBe("attentive");
-    expect(shadow.textContent).toContain("Selection ready");
+    expect(shadow.textContent).toContain("Ready to inspect this assumption");
     expect(selectionEvent).toHaveBeenCalledOnce();
     expect((selectionEvent.mock.calls[0]?.[0] as CustomEvent).detail).toMatchObject({
       source: "text",

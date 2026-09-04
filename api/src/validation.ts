@@ -2,6 +2,7 @@ import { CITATION_TAGS } from "@equalens/shared/citations";
 import type {
   AnalyzeRequest,
   AnalyzeResponse,
+  AnalyzeMode,
   Category,
   Confidence,
   Finding,
@@ -19,6 +20,7 @@ const SEVERITIES = new Set<Severity>(["safety-high", "safety-med", "usability-hi
 const CATEGORIES = new Set<Category>(["safety", "usability", "language"]);
 const CONFIDENCE = new Set<Confidence>(["high", "medium", "low"]);
 const INTERESTS = new Set<InterestCategory>(["safety", "sizing-fit", "language", "everyday-usability"]);
+const ANALYZE_MODES = new Set<AnalyzeMode>(["explain", "excluded"]);
 const EVIDENCE_TAGS = new Set(CITATION_TAGS);
 const MAX_TEXT_LENGTH = 16_000;
 const MAX_DOM_ELEMENTS = 600;
@@ -67,7 +69,14 @@ export function parseAnalyzeRequest(value: unknown): AnalyzeRequest {
     pageTitle: requestString(body.pageTitle, "pageTitle", 512),
     pageUrl: requestUrl(body.pageUrl, "pageUrl"),
     categories: requestInterests(body.categories),
+    mode: requestAnalyzeMode(body.mode),
   };
+}
+
+function requestAnalyzeMode(value: unknown): AnalyzeMode {
+  if (value === undefined) return "explain";
+  if (typeof value !== "string" || !ANALYZE_MODES.has(value as AnalyzeMode)) throw new HttpError(400, "Invalid mode");
+  return value as AnalyzeMode;
 }
 
 function parseDomElement(value: unknown): SerializedDomElement {
@@ -154,7 +163,9 @@ function parseFinding(value: unknown, allowedSelectors?: ReadonlySet<string>, ai
   if (value.source !== "ai" && (aiOnly || value.source !== "heuristic")) throw new AIValidationError("Invalid source");
   if (typeof value.redesignable !== "boolean" || typeof value.fixed !== "boolean") throw new AIValidationError("Invalid finding state");
   if (aiOnly && value.fixed !== false) throw new AIValidationError("AI findings must begin unfixed");
-  if (value.stereotype !== undefined && typeof value.stereotype !== "boolean") throw new AIValidationError("Invalid stereotype flag");
+  if (value.stereotype !== undefined && value.stereotype !== null && typeof value.stereotype !== "boolean") {
+    throw new AIValidationError("Invalid stereotype flag");
+  }
 
   const evidenceTags = modelStringArrayAllowEmpty(value.evidenceTags, "evidenceTags");
   if (evidenceTags.some((tag) => !EVIDENCE_TAGS.has(tag))) throw new AIValidationError("Unknown evidence tag");
