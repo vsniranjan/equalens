@@ -65,7 +65,6 @@ app.post("/analyze", async (context) => {
         apiKey: context.env.GEMINI_API_KEY,
         prompt: buildAnalyzePrompt(request),
         responseSchema: FINDINGS_RESPONSE_SCHEMA,
-        temperature: 0.3,
       });
       return parseFindingsResponse(output, new Set([request.selector]));
     },
@@ -85,7 +84,6 @@ app.post("/scan", async (context) => {
         apiKey: context.env.GEMINI_API_KEY,
         prompt: buildScanPrompt(request),
         responseSchema: FINDINGS_RESPONSE_SCHEMA,
-        temperature: 0.3,
       });
       return parseFindingsResponse(output, new Set(request.dom.map(({ selector }) => selector)));
     },
@@ -114,7 +112,6 @@ app.post("/redesign", async (context) => {
         apiKey: context.env.GEMINI_API_KEY,
         prompt: buildRedesignPrompt(request),
         responseSchema: REDESIGN_RESPONSE_SCHEMA,
-        temperature: 0.5,
       });
       return parseRedesignResponse(output, request.outerHTML);
     },
@@ -145,7 +142,13 @@ app.notFound((context) => context.json({ error: "Not found" }, 404));
 app.onError((error, context) => {
   const status = error instanceof HttpError ? error.status : 500;
   const publicMessage = error instanceof HttpError ? error.publicMessage : "Internal server error";
-  console.error(JSON.stringify({ event: "request_error", path: context.req.path, status, errorType: error.name }));
+  console.error(JSON.stringify({
+    event: "request_error",
+    path: context.req.path,
+    status,
+    errorType: error.name,
+    ...(error instanceof HttpError ? { detail: error.message } : {}),
+  }));
   const response = context.json({ error: publicMessage }, status);
   response.headers.set("Cache-Control", "no-store");
   if (error instanceof HttpError && error.headers) {

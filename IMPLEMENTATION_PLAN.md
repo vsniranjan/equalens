@@ -26,7 +26,7 @@ male-centric design. See spec §0 intro and plan.md for the narrative.
 1. `extension/` — MV3 Chrome extension, React 18 + Vite + CRXJS + TypeScript,
    UI in a Shadow-DOM overlay (spec §2).
 2. `api/` — Cloudflare Worker (TypeScript + Hono) proxying Gemini
-   (`gemini-2.5-flash`, structured output), with KV cache + KV report storage
+   (`gemini-3.6-flash`, structured output), with KV cache + KV report storage
    (spec §3).
 3. `mock-site/` — "Meridian Motors" fake premium automaker product page that
    carries the scripted demo (spec §4).
@@ -246,9 +246,11 @@ in DOM text (grep the built HTML).
 Tasks:
 1. Endpoints per spec §3.1: `POST /analyze`, `POST /scan`, `POST /redesign`,
    `POST /report`, `GET /report/:id`.
-2. Gemini calls (spec §3.3): model constant `gemini-2.5-flash`; **always**
-   use `responseSchema` structured output (no freeform JSON parsing);
-   temperature 0.3 (analyze/scan) / 0.5 (redesign). Scan prompt rules:
+2. Gemini calls (spec §3.3): model constant `gemini-3.6-flash`; **always**
+   use `responseSchema` structured output (no freeform JSON parsing) and the
+   model's default sampling (Gemini 3.6 no longer accepts sampling controls).
+   Use `thinkingLevel: low` to keep interactive requests inside the Worker
+   deadline. Scan prompt rules:
    selectors must be echoed verbatim from input, never invented; model may
    only cite evidence tags that exist in the citation library tag list
    (passed in the prompt); user interest categories bias emphasis; flag
@@ -476,7 +478,7 @@ Tasks:
 2. Rehearse the real-site half on the chosen car-manufacturer page; fix
    selector anchoring issues; confirm the selector-miss fallback path renders.
 3. Failure drills per spec §5: kill network mid-scan (heuristics survive),
-   Gemini 12s timeout (error + retry UI), double-scan, iframe selection
+   Gemini 25s timeout (error + retry UI), double-scan, iframe selection
    message, chrome:// no-op.
 4. Polish pass: orb glide, heatmap bloom stagger, score count-up, typewriter
    pacing — motion is the wow multiplier, but only after everything works.

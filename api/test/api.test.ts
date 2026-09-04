@@ -1,6 +1,7 @@
 import { reset, SELF } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { EQUALENS_API_KEY } from "@equalens/shared/config";
+import { GEMINI_TIMEOUT_MS } from "../src/constants";
 import analyzeRequest from "./fixtures/analyze.json";
 import redesignRequest from "./fixtures/redesign.json";
 import reportPayload from "./fixtures/report.json";
@@ -72,6 +73,10 @@ describe("API boundary", () => {
 });
 
 describe("Gemini endpoints", () => {
+  it("allows the free-tier Gemini model enough time to answer", () => {
+    expect(GEMINI_TIMEOUT_MS).toBe(25_000);
+  });
+
   it("analyzes a selection with structured output and caches the response", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async () =>
       geminiResponse({ findings: [finding], summary: "The control assumes one hand-size baseline." }),
@@ -91,10 +96,14 @@ describe("Gemini endpoints", () => {
     const [url, init] = fetchSpy.mock.calls[0] ?? [];
     const geminiBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
     expect(JSON.stringify(geminiBody)).toContain("responseSchema");
-    expect(String(url)).toContain("gemini-2.5-flash:generateContent");
+    expect(String(url)).toContain("gemini-3.6-flash:generateContent");
     expect(geminiBody).toMatchObject({
-      generationConfig: { temperature: 0.3, responseMimeType: "application/json" },
+      generationConfig: {
+        responseMimeType: "application/json",
+        thinkingConfig: { thinkingLevel: "low" },
+      },
     });
+    expect(JSON.stringify(geminiBody)).not.toContain('"temperature"');
   });
 
   it("bypasses cache when nocache=1 is present", async () => {
@@ -149,16 +158,22 @@ describe("Gemini endpoints", () => {
     await expect(response.json()).resolves.toMatchObject({ ...redesign, cached: false });
     expect(String(fetchSpy.mock.calls[0]?.[1]?.body)).toContain("Never simplify functionality");
     expect(JSON.parse(String(fetchSpy.mock.calls[0]?.[1]?.body))).toMatchObject({
-      generationConfig: { temperature: 0.5, responseMimeType: "application/json" },
+      generationConfig: {
+        responseMimeType: "application/json",
+        thinkingConfig: { thinkingLevel: "low" },
+      },
     });
+    expect(String(fetchSpy.mock.calls[0]?.[1]?.body)).not.toContain('"temperature"');
   });
 
   it("surfaces upstream failures without leaking provider details", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response("quota detail", { status: 429 }));
 
     const response = await post("/analyze?nocache=1", analyzeRequest);
     expect(response.status).toBe(502);
     await expect(response.json()).resolves.toEqual({ error: "AI service request failed" });
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Gemini returned 429: quota detail"));
   });
 
   it("rejects unsafe or capability-reducing redesign HTML", async () => {

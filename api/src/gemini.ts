@@ -7,7 +7,6 @@ interface GenerateOptions {
   apiKey: string;
   prompt: string;
   responseSchema: GeminiSchema;
-  temperature: 0.3 | 0.5;
 }
 
 interface GeminiPart {
@@ -39,9 +38,9 @@ export async function generateStructured(options: GenerateOptions): Promise<unkn
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: options.prompt }] }],
         generationConfig: {
-          temperature: options.temperature,
           responseMimeType: "application/json",
           responseSchema: options.responseSchema,
+          thinkingConfig: { thinkingLevel: "low" },
         },
       }),
       signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),

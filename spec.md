@@ -38,7 +38,7 @@ Three deployable artifacts:
 │    • Rate limit + shared header token                       │
 └──────────────┬──────────────────────────────────────────────┘
                │
-        Gemini API (gemini-2.5-flash primary)
+        Gemini API (gemini-3.6-flash primary)
 
 ┌─────────────────────────────────────────────────────────────┐
 │  Mock demo site — "Meridian Motors" (static, Vite build,    │
@@ -317,11 +317,14 @@ interface RedesignResponse {
 
 ### 3.3 Gemini integration
 
-- Model: `gemini-2.5-flash` (fast, cheap, strong structured output). Config
+- Model: `gemini-3.6-flash` (stable, free-tier compatible, strong structured
+  output). Config
   constant so it can be bumped to `-pro` for `/redesign` if flash quality
   disappoints.
 - All calls use `responseSchema` (Gemini structured output) — no JSON parsing
-  of freeform text. Temperature 0.3 for scan/analyze, 0.5 for redesign.
+  of freeform text. Use the model's default sampling because Gemini 3.6 no
+  longer accepts `temperature`, `top_p`, or `top_k` controls. Set
+  `thinkingLevel` to `low` to minimize latency for the interactive UI.
 - Scan prompt includes: serialized DOM JSON, page URL/title, user categories,
   the citation library's tag list (model may only cite tags that exist —
   prevents fabricated citations), and instruction to return CSS selectors
@@ -427,7 +430,7 @@ full citation. This is what makes "evidence vs inference" honest.
 
 | Case | Behavior |
 |---|---|
-| Gemini error/timeout (12 s) | Popup/panel shows friendly error + Retry; heuristic findings and score remain usable. KV cache prevents this on rehearsed content. |
+| Gemini error/timeout (25 s) | Popup/panel shows friendly error + Retry; heuristic findings and score remain usable. KV cache prevents this on rehearsed content. |
 | Selector not found (SPA re-render, dynamic DOM) | Finding shown panel-only with "location approximate"; no crash. |
 | SPA wipes our redesigned DOM | Session-scoped only; we keep node refs and re-apply is NOT attempted (out of scope) — demo sites don't re-render. Documented limitation. |
 | Page with CSP blocking injected styles | We use constructed stylesheets in shadow DOM — unaffected by page CSP. Worker API calls go via background worker — unaffected by page CSP. |
