@@ -3,15 +3,142 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Meridian Motors S4 technical product page" />
-    <title>Meridian Motors</title>
+    <meta name="description" content="Explore the Meridian S4 electric performance sedan, its technical architecture, cockpit, and commission options." />
+    <meta name="theme-color" content="#0a0b0d" />
+    <title>Meridian S4 | Meridian Motors</title>
   </head>
   <body>
-    <main class="min-h-screen bg-[#0a0b0d] px-6 py-24 text-white">
-      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-[#a7c8ff]">Flagship Series 04</p>
-      <h1 class="mt-4 max-w-4xl text-5xl font-light tracking-tight">Meridian S4</h1>
-      <p class="mt-4 max-w-xl text-[#c9cdd3]">The full technical product experience is being assembled.</p>
+    <a class="skip-link" href="#overview">Skip to vehicle overview</a>
+    <header class="site-header" data-header>
+      <a class="wordmark" href="#overview" aria-label="Meridian Motors home">MERIDIAN</a>
+      <nav class="primary-nav" aria-label="Primary navigation">
+        <a href="#seat-system">Architecture</a><a href="#controls">Cockpit</a><a href="#interior">Interior</a>
+      </nav>
+      <a class="nav-cta" href="#configure">Configure</a>
+    </header>
+
+    <main>
+      <section class="hero" id="overview" aria-labelledby="hero-title">
+        <img class="hero__image" src="/assets/hero-sedan-side-view.jpg" alt="Dark titanium Meridian S4 sedan in a cinematic studio" width="1376" height="768" fetchpriority="high" />
+        <div class="hero__shade" aria-hidden="true"></div>
+        <div class="hero__content page-shell">
+          <p class="eyebrow"><span class="status-dot"></span>Flagship Series 04</p>
+          <h1 id="hero-title">Meridian S4 — engineered for the driver.</h1>
+          <p class="hero__lede">Precision in every dimension.</p>
+          <div class="hero__actions">
+            <a class="button button--primary" href="#configure">Build yours <span aria-hidden="true">→</span></a>
+            <a class="button button--quiet" href="#seat-system">Technical architecture <span aria-hidden="true">↓</span></a>
+          </div>
+          <dl class="telemetry" aria-label="Vehicle performance summary">
+            <div><dt>Acceleration</dt><dd>3.2s <small>0-100 km/h</small></dd></div>
+            <div><dt>Chassis rigidity</dt><dd>48.2 <small>kNm/deg</small></dd></div>
+            <div><dt>Weight balance</dt><dd>50:50 <small>static</small></dd></div>
+            <div><dt>Drag coefficient</dt><dd>0.21 <small>Cd</small></dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="section section--surface" id="seat-system" data-equalens-variant="seat-restraint" aria-labelledby="seat-title">
+        <div class="page-shell reveal">
+          <div class="section-heading">
+            <p class="eyebrow">Seat &amp; restraint system</p>
+            <h2 id="seat-title">Anthropometric Geometry &amp; Safety Cell</h2>
+            <p>Occupant protection resolved as a structural system, measured down to the millimetre.</p>
+          </div>
+          <div class="technical-layout">
+            <figure class="technical-figure">
+              <div class="technical-figure__frame">
+                <img src="/assets/seat-ergonomic-diagram.jpg" alt="Technical ergonomic cross-section of the Meridian S4 seat" width="1376" height="768" loading="lazy" />
+                <span class="figure-tag figure-tag--top">FIG. 04-B // ERGONOMIC CROSS SECTION</span>
+                <span class="figure-tag figure-tag--bottom">SCALE 1:20 ARCHITECTURAL</span>
+              </div>
+              <figcaption><span>Reference: Meridian Occupant Protection Suite</span><span>Spec: ISO 2631-1 validated</span></figcaption>
+            </figure>
+            <div class="spec-card">
+              <div class="spec-card__head"><span>Dimension &amp; metric</span><span>Baseline standard</span></div>
+              <dl class="spec-list">
+                <div><dt>Restraint validation</dt><dd>Certified against the 50th-percentile adult male crash test dummy (175 cm / 78 kg)</dd></div>
+                <div><dt>Seatbelt anchor</dt><dd>Fixed-height B-pillar anchor</dd></div>
+                <div><dt>Lumbar support</dt><dd>Non-adjustable, standard profile</dd></div>
+                <div><dt>Headrest</dt><dd>Standard fit</dd></div>
+              </dl>
+              <p class="technical-note">Tested to industry standard specifications.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--deep" id="controls" data-equalens-variant="controls-reach" aria-labelledby="controls-title">
+        <div class="page-shell reveal">
+          <div class="section-heading section-heading--split">
+            <div><p class="eyebrow">Controls &amp; reach</p><h2 id="controls-title">Cockpit Envelope &amp; Human Interface</h2></div>
+            <p class="technical-note">SENSORY ALIGNMENT // TACTILE MECHANICAL HARMONY</p>
+          </div>
+          <figure class="cockpit-figure">
+            <img src="/assets/cockpit-reach-dashboard.jpg" alt="Meridian S4 cockpit showing control positions and reach geometry" width="1376" height="768" loading="lazy" />
+          </figure>
+          <blockquote class="reach-claim">“All controls positioned at standard reach distance, based on 50th percentile male arm reach.”</blockquote>
+          <div class="feature-grid feature-grid--three">
+            <article class="feature-card"><p class="feature-card__index">01 / ENVELOPE</p><h3>One-size steering grip</h3><p>Calibrated rim circumference and thumb indentations provide predictable mechanical feedback across high-g cornering loads.</p><span>TACTILE SPEC 38MM</span></article>
+            <article class="feature-card"><p class="feature-card__index">02 / FOOTWELL</p><h3>Standard pedal travel</h3><p>Linear resistance machined from cold-forged aluminium with an exact spatial offset relative to the floor pan.</p><span>STROKE RATIO 1:1.2</span></article>
+            <article class="feature-card"><p class="feature-card__index">03 / CONSOLE</p><h3>Fixed centre console height</h3><p>A structural spine integrates the gear selector, haptic dial, and primary crash transmission member.</p><span>DATUM ELEVATION +210MM</span></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--surface" id="interior" aria-labelledby="interior-title">
+        <div class="page-shell reveal">
+          <div class="section-heading">
+            <p class="eyebrow">Interior comfort</p><h2 id="interior-title">Acoustic &amp; Thermal Equilibrium</h2>
+            <p>A cabin tuned as carefully as the chassis, with every material assigned a measurable role.</p>
+          </div>
+          <div class="feature-grid feature-grid--two">
+            <article class="feature-card feature-card--large"><p class="feature-card__index">CLIMATE 01</p><h3>Climate control calibrated to standard metabolic comfort model</h3><p>Multi-point sensor arrays match air delivery vectors to standard physiological thermal dissipation curves.</p><span>EQUILIBRIUM 21.5°C // FLOW RATE 4.8 M/S</span></article>
+            <article class="feature-card feature-card--large"><p class="feature-card__index">STRUCTURE 02</p><h3>One-size-fits-all sport seats</h3><p>Monolithic bucket architecture uses multi-density foam cores formulated for sustained lateral holding.</p><span>FOAM DENSITY 65 KG/M³ // BOLSTER ANGLE 18°</span></article>
+            <article class="feature-card feature-card--large"><p class="feature-card__index">ACOUSTICS 03</p><h3>Dual-zone acoustic glass insulation</h3><p>Laminated acoustic film mitigates buffeting and external wind frequencies up to 4,000 Hz.</p><span>SOUND ATTENUATION -6.2 DB // GLASS 4.8MM</span></article>
+            <article class="feature-card feature-card--large"><p class="feature-card__index">DYNAMICS 04</p><h3>Active vibration suppression chassis mounting</h3><p>Hydraulically damped subframe bushings isolate unwanted powertrain feedback at motorway speeds.</p><span>DAMPING FREQUENCY 12-40 HZ // HYDRAULIC COUPLING</span></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--commission" id="configure" data-equalens-variant="config-form" aria-labelledby="configure-title">
+        <div class="commission page-shell reveal">
+          <div class="commission__brief">
+            <p class="eyebrow">Commission intake</p><h2 id="configure-title">Reserve your S4</h2>
+            <p>Secure priority allocation in the inaugural production wave. Each commission includes direct technical consultation with the Meridian vehicle engineering team.</p>
+            <ul class="commission__facts"><li>Allocation window: 2026/Q4 delivery</li><li>Bespoke telemetry profiling included</li><li>Fully refundable security deposit</li></ul>
+          </div>
+          <form class="reservation-form" data-reservation-form>
+            <div class="form-row form-row--title">
+              <label><span>Title</span><select id="title" name="title" required><option value="Mr.">Mr.</option><option value="Mrs.">Mrs.</option></select></label>
+              <label><span>First name</span><input name="firstName" autocomplete="given-name" placeholder="E.g. James" required /></label>
+            </div>
+            <div class="form-row">
+              <label><span>Last name</span><input name="lastName" autocomplete="family-name" placeholder="E.g. Harrison" required /></label>
+              <label><span>Email address</span><input name="email" type="email" autocomplete="email" placeholder="name@domain.com" required /></label>
+            </div>
+            <div class="form-actions"><button class="button button--primary" type="submit">Reserve now <span aria-hidden="true">→</span></button><span>SECURE TOKEN TRANSIT // 256-BIT ENCRYPTION</span></div>
+            <p class="confirmation" data-confirmation role="status" hidden>Allocation slot requested. Your Meridian Concierge will contact you within 24 hours.</p>
+          </form>
+        </div>
+      </section>
+
+      <aside class="reserve-bar" aria-label="S4 reservation summary">
+        <div class="reserve-bar__specs"><span><small>Platform</small>MERIDIAN S4 DUAL-MOTOR</span><span><small>Est. range</small>580 KM WLTP</span></div>
+        <div class="reserve-bar__price"><span><small>Starting from</small>$118,500</span><a href="#configure">Reserve now</a></div>
+      </aside>
     </main>
+
+    <footer class="site-footer" id="press">
+      <div class="page-shell">
+        <div class="press-grid">
+          <figure><blockquote>“A driver's machine, uncompromising in its purity and technical dominance.”</blockquote><figcaption>Motor Weekly</figcaption></figure>
+          <figure><blockquote>“An architectural triumph that redefines modern performance electrification.”</blockquote><figcaption>Automotive Architectural Journal</figcaption></figure>
+          <figure><blockquote>“Precision aerospace engineering distilled into a cockpit of pure intent.”</blockquote><figcaption>Car &amp; Pilot International</figcaption></figure>
+        </div>
+        <div class="footer-meta"><nav aria-label="Legal"><a href="#overview">Privacy</a><a href="#overview">Terms</a><a href="#overview">Spec disclosures</a></nav><p>© 2026 MERIDIAN MOTORS CORP. ALL RIGHTS RESERVED.</p></div>
+      </div>
+    </footer>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
