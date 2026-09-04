@@ -1,0 +1,9 @@
+{
+  "text": "One-size steering grip",
+  "outerHTML": "<h3 class=\"feature-title\">One-size steering grip</h3>",
+  "selector": "#controls .feature-card:first-child h3",
+  "context": "Controls and reach specifications for the Meridian S4 cockpit.",
+  "pageTitle": "Meridian S4 | Meridian Motors",
+  "pageUrl": "https://meridian-motors.example/",
+  "categories": ["sizing-fit", "safety"]
+}

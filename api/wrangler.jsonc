@@ -8,6 +8,9 @@
     { "binding": "CACHE" },
     { "binding": "REPORTS" }
   ],
+  "secrets": {
+    "required": ["GEMINI_API_KEY"]
+  },
   "observability": {
     "enabled": true,
     "logs": {

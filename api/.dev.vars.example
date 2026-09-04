@@ -1,0 +1,3 @@
+# Copy this file to .dev.vars for local Wrangler development only.
+# Never commit the real value.
+GEMINI_API_KEY=replace-with-your-google-ai-studio-key

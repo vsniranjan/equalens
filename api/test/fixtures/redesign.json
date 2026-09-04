@@ -1,0 +1,20 @@
+{
+  "outerHTML": "<section><h3>One-size steering grip</h3><p>Diameter: 38 mm</p><button type=\"button\">Choose trim</button></section>",
+  "finding": {
+    "id": "grip-size",
+    "selector": "#controls .feature-card:first-child",
+    "title": "Fixed grip assumes one hand size",
+    "assumption": "A single steering-wheel grip diameter works for every driver.",
+    "impact": "Drivers with smaller hands may have less secure control.",
+    "affected": ["drivers with smaller hands", "drivers with limited grip"],
+    "category": "usability",
+    "severity": "usability-high",
+    "confidence": "high",
+    "evidenceTags": [],
+    "source": "ai",
+    "redesignable": true,
+    "fixed": false
+  },
+  "pageTitle": "Meridian S4 | Meridian Motors",
+  "pageUrl": "https://meridian-motors.example/"
+}

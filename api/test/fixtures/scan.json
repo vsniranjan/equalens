@@ -1,0 +1,19 @@
+{
+  "dom": [
+    {
+      "selector": "#seat-system .spec-list > div:first-child dd",
+      "text": "Certified against the 50th-percentile adult male crash test dummy (175 cm / 78 kg)",
+      "html": "<dd>Certified against the 50th-percentile adult male crash test dummy (175 cm / 78 kg)</dd>",
+      "tagName": "dd"
+    },
+    {
+      "selector": "#controls .reach-claim",
+      "text": "All controls positioned at standard reach distance, based on 50th percentile male arm reach.",
+      "html": "<blockquote class=\"reach-claim\">All controls positioned at standard reach distance, based on 50th percentile male arm reach.</blockquote>",
+      "tagName": "blockquote"
+    }
+  ],
+  "pageTitle": "Meridian S4 | Meridian Motors",
+  "pageUrl": "https://meridian-motors.example/",
+  "categories": ["safety", "sizing-fit"]
+}
