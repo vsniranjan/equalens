@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-secondary-fixed-variant":"#1e477b","on-tertiary-fixed":"#001d36","error":"#ffb4ab","primary-fixed":"#e2e2e2","surface-container":"#1f2022","background":"#121315","surface-variant":"#343537","secondary-fixed":"#d5e3ff","on-secondary":"#003060","outline":"#8e9192","tertiary":"#ffffff","inverse-on-surface":"#303033","primary-fixed-dim":"#c6c6c7","tertiary-fixed-dim":"#a6c9f6","on-error-container":"#ffdad6","outline-variant":"#444748","surface-container-lowest":"#0d0e10","surface-bright":"#38393b","on-background":"#e3e2e5","on-surface-variant":"#c4c7c8","surface-container-low":"#1b1c1e","primary":"#ffffff","secondary":"#a7c8ff","error-container":"#93000a","primary-container":"#e2e2e2","secondary-fixed-dim":"#a7c8ff","tertiary-fixed":"#d1e4ff","inverse-surface":"#e3e2e5","on-primary-container":"#636565","on-surface":"#e3e2e5","on-secondary-container":"#92b7f1","on-secondary-fixed":"#001c3b","on-tertiary":"#033257","on-primary-fixed-variant":"#454747","surface-container-highest":"#343537","surface-container-high":"#292a2c","on-tertiary-container":"#43678f","on-primary-fixed":"#1a1c1c","tertiary-container":"#d1e4ff","on-primary":"#2f3131","surface-dim":"#121315","surface-tint":"#c6c6c7","surface":"#121315","on-error":"#690005","on-tertiary-fixed-variant":"#23496f","inverse-primary":"#5d5f5f","secondary-container":"#1e477b"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"margin-desktop":"5rem","space-lg":"1.5rem","space-2xs":"0.25rem","space-sm":"0.75rem","space-xs":"0.5rem","space-3xl":"5rem","max-width":"1440px","space-md":"1rem","space-4xl":"8rem","space-5xl":"12rem","gutter-desktop":"2rem","space-2xl":"3rem","margin-mobile":"1.5rem","space-xl":"2rem","gutter-mobile":"1rem"},"fontFamily":{"display-xl-mobile":["Inter"],"body-sm":["Inter"],"label-mono-sm":["JetBrains Mono"],"headline-lg-mobile":["Inter"],"headline-lg":["Inter"],"headline-sm":["Inter"],"body-lg":["Inter"],"label-caps":["Inter"],"display-xl":["Inter"],"body-md":["Inter"],"button-text":["Inter"],"headline-md":["Inter"]},"fontSize":{"display-xl-mobile":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"300"}],"body-sm":["13px",{"lineHeight":"20px","letterSpacing":"0.01em","fontWeight":"400"}],"label-mono-sm":["11px",{"lineHeight":"16px","letterSpacing":"0.05em","fontWeight":"400"}],"headline-lg-mobile":["32px",{"lineHeight":"40px","letterSpacing":"-0.02em","fontWeight":"400"}],"headline-lg":["44px",{"lineHeight":"52px","letterSpacing":"-0.025em","fontWeight":"400"}],"headline-sm":["20px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"500"}],"body-lg":["18px",{"lineHeight":"30px","letterSpacing":"0em","fontWeight":"300"}],"label-caps":["11px",{"lineHeight":"14px","letterSpacing":"0.18em","fontWeight":"600"}],"display-xl":["72px",{"lineHeight":"80px","letterSpacing":"-0.03em","fontWeight":"300"}],"body-md":["15px",{"lineHeight":"24px","letterSpacing":"0em","fontWeight":"400"}],"button-text":["13px",{"lineHeight":"16px","letterSpacing":"0.08em","fontWeight":"500"}],"headline-md":["28px",{"lineHeight":"36px","letterSpacing":"-0.015em","fontWeight":"400"}]}}}};</script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/></head><body class="bg-surface font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 max-w-max-width mx-auto px-margin-desktop flex items-center justify-between"><div class="flex items-center gap-space-lg"><a class="font-label-caps text-label-caps uppercase tracking-[0.25em] text-primary hover:text-on-surface transition-colors" data-path="overview" href="#">MERIDIAN</a></div><div class="flex items-center gap-space-xl"><nav class="flex items-center gap-space-xl" data-active-classes="text-primary font-medium"><a class="font-button-text text-button-text uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors" data-path="models" href="#">Models</a><a class="font-button-text text-button-text uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors" data-path="technology" href="#">Technology</a><a class="font-button-text text-button-text uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors" data-path="design" href="#">Design</a><a class="font-button-text text-button-text uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors" data-path="contact" href="#">Contact</a></nav><div class="flex items-center gap-space-md"><a class="font-button-text text-button-text uppercase px-space-md py-space-xs text-primary bg-surface-variant/40 hover:bg-secondary-container hover:text-on-surface transition-all duration-150" data-path="configurator" href="#">Configure</a><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="../assets/profile-avatar.png"/></div></div></div></header><main class="w-full pt-16 bg-surface"><div class="flex flex-col w-full">
+<!-- SECTION 1: CINEMATIC HERO -->
+<section class="relative w-full overflow-hidden -mt-16 pt-16 min-h-[92vh] flex items-end">
+<!-- Background visual layer -->
+<div class="absolute inset-0 z-0">
+<img alt="Meridian S4 Luxury Sedan Side View" class="w-full h-full object-cover object-center brightness-95 contrast-105" src="../assets/hero-sedan-side-view.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-surface/80 via-transparent to-surface/60"></div>
+</div>
+<!-- Hero Content Overlay -->
+<div class="relative z-10 w-full max-w-max-width mx-auto px-margin-desktop pb-space-3xl flex flex-col justify-end">
+<div class="flex items-center gap-space-sm mb-space-md">
+<span class="inline-block w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-caps text-label-caps text-secondary uppercase tracking-[0.25em]">Flagship Series 04</span>
+</div>
+<div class="max-w-4xl">
+<h1 class="font-display-xl text-display-xl text-primary font-light tracking-tight mb-space-xs">
+          Meridian S4 — engineered for the driver.
+        </h1>
+<p class="font-headline-sm text-headline-sm text-on-surface-variant font-light tracking-normal mb-space-xl">
+          Precision in every dimension.
+        </p>
+<div class="flex items-center gap-space-lg">
+<a class="font-button-text text-button-text uppercase tracking-widest px-space-xl py-space-md bg-secondary text-on-secondary hover:bg-primary transition-all duration-150 shadow-md shadow-secondary-container/20 flex items-center gap-space-xs" href="#reserve">
+<span>Build yours</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+<a class="font-button-text text-button-text uppercase tracking-widest px-space-lg py-space-md text-on-surface hover:text-primary transition-colors flex items-center gap-space-xs" href="#seat-system">
+<span>Technical Architecture</span>
+<span class="material-symbols-outlined text-sm">south</span>
+</a>
+</div>
+</div>
+<!-- Live telemetry HUD bar (Micro metrics) -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-gutter-desktop mt-space-3xl pt-space-md border-t-0">
+<div class="p-space-md bg-surface-container-low/70 backdrop-blur-md">
+<div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Acceleration</div>
+<div class="font-headline-md text-headline-md text-primary mt-space-2xs">3.2s <span class="text-sm font-normal text-on-surface-variant">0-100 km/h</span></div>
+</div>
+<div class="p-space-md bg-surface-container-low/70 backdrop-blur-md">
+<div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Chassis Rigidity</div>
+<div class="font-headline-md text-headline-md text-primary mt-space-2xs">48.2 <span class="text-sm font-normal text-on-surface-variant">kNm/deg</span></div>
+</div>
+<div class="p-space-md bg-surface-container-low/70 backdrop-blur-md">
+<div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Weight Balance</div>
+<div class="font-headline-md text-headline-md text-primary mt-space-2xs">50:50 <span class="text-sm font-normal text-on-surface-variant">static</span></div>
+</div>
+<div class="p-space-md bg-surface-container-low/70 backdrop-blur-md">
+<div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Standard Drag</div>
+<div class="font-headline-md text-headline-md text-primary mt-space-2xs">0.21 <span class="text-sm font-normal text-on-surface-variant">Cd</span></div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 2: SEAT & RESTRAINT SYSTEM -->
+<section class="w-full py-space-4xl bg-surface relative" id="seat-system">
+<div class="max-w-max-width mx-auto px-margin-desktop">
+<div class="flex flex-col mb-space-2xl">
+<div class="font-label-caps text-label-caps text-secondary uppercase tracking-[0.25em] mb-space-xs">
+          SEAT & RESTRAINT SYSTEM
+        </div>
+<h2 class="font-headline-lg text-headline-lg text-primary font-normal">
+          Anthropometric Geometry & Safety Cell
+        </h2>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop items-stretch">
+<!-- Left: Technical Diagram -->
+<div class="lg:col-span-7 bg-surface-container-low p-space-md flex flex-col justify-between relative group">
+<div class="relative overflow-hidden bg-surface-container-lowest flex items-center justify-center p-space-xs">
+<img alt="Seat and Ergonomic Diagram" class="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.02]" src="../assets/seat-ergonomic-diagram.jpg"/>
+<div class="absolute top-4 left-4 font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase tracking-widest bg-surface-container/90 px-space-xs py-space-2xs">
+              FIG. 04-B // ERGONOMIC CROSS SECTION
+            </div>
+<div class="absolute bottom-4 right-4 font-label-mono-sm text-label-mono-sm text-secondary bg-surface-container/90 px-space-xs py-space-2xs">
+              SCALE 1:20 ARCHITECTURAL
+            </div>
+</div>
+<div class="mt-space-md flex justify-between items-center text-on-surface-variant font-label-mono-sm text-label-mono-sm">
+<span>REFERENCE: MERIDIAN OCCUPANT PROTECTION SUITE</span>
+<span>SPEC: ISO 2631-1 VALIDATED</span>
+</div>
+</div>
+<!-- Right: Precision Specification Table -->
+<div class="lg:col-span-5 flex flex-col justify-between bg-surface-container-low p-space-xl">
+<div>
+<div class="flex items-center justify-between pb-space-sm mb-space-md">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Dimension & Metric</span>
+<span class="font-label-caps text-label-caps text-secondary uppercase tracking-widest">Baseline Standard</span>
+</div>
+<!-- Table Rows verbatim -->
+<div class="space-y-space-md">
+<div class="bg-surface-container p-space-md">
+<div class="font-label-caps text-label-caps text-secondary uppercase tracking-wider mb-space-2xs">Restraint validation</div>
+<div class="font-body-md text-body-md text-primary font-normal">
+                  Certified against the 50th-percentile adult male crash test dummy (175 cm / 78 kg)
+                </div>
+</div>
+<div class="bg-surface-container p-space-md">
+<div class="font-label-caps text-label-caps text-secondary uppercase tracking-wider mb-space-2xs">Seatbelt anchor</div>
+<div class="font-body-md text-body-md text-primary font-normal">
+                  Fixed-height B-pillar anchor
+                </div>
+</div>
+<div class="bg-surface-container p-space-md">
+<div class="font-label-caps text-label-caps text-secondary uppercase tracking-wider mb-space-2xs">Lumbar support</div>
+<div class="font-body-md text-body-md text-primary font-normal">
+                  Non-adjustable, standard profile
+                </div>
+</div>
+<div class="bg-surface-container p-space-md">
+<div class="font-label-caps text-label-caps text-secondary uppercase tracking-wider mb-space-2xs">Headrest</div>
+<div class="font-body-md text-body-md text-primary font-normal">
+                  Standard fit
+                </div>
+</div>
+</div>
+</div>
+<!-- Small Footnote verbatim -->
+<div class="mt-space-xl pt-space-md">
+<p class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase tracking-wider">
+              Tested to industry standard specifications.
+            </p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 3: CONTROLS & REACH -->
+<section class="w-full py-space-4xl bg-surface-container-lowest relative">
+<div class="max-w-max-width mx-auto px-margin-desktop">
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-space-2xl gap-space-md">
+<div>
+<div class="font-label-caps text-label-caps text-secondary uppercase tracking-[0.25em] mb-space-xs">
+            CONTROLS & REACH
+          </div>
+<h2 class="font-headline-lg text-headline-lg text-primary font-normal">
+            Cockpit Envelope & Human Interface
+          </h2>
+</div>
+<p class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase tracking-widest max-w-sm">
+          SENSORY ALIGNMENT // TACTILE MECHANICAL HARMONY
+        </p>
+</div>
+<!-- Prominent Cockpit Image -->
+<div class="relative w-full overflow-hidden bg-surface-container-low mb-space-md">
+<img alt="Meridian S4 Cockpit and Ergonomic Reach Dashboard" class="w-full max-h-[640px] object-cover object-center" src="../assets/cockpit-reach-dashboard.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-60"></div>
+</div>
+<!-- Verbatim Caption -->
+<div class="mb-space-2xl px-space-xs flex items-center gap-space-sm">
+<span class="inline-block w-1.5 h-1.5 bg-secondary"></span>
+<p class="font-body-lg text-body-lg text-primary italic font-light">
+          “All controls positioned at standard reach distance, based on 50th percentile male arm reach.”
+        </p>
+</div>
+<!-- Three Small Feature Cards verbatim -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter-desktop">
+<div class="bg-surface-container-low p-space-lg flex flex-col justify-between hover:bg-surface-container transition-all">
+<div>
+<span class="font-label-mono-sm text-label-mono-sm text-secondary block mb-space-sm">01 / ENVELOPE</span>
+<h3 class="font-headline-sm text-headline-sm text-primary mb-space-xs">
+              One-size steering grip
+            </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant font-light">
+              Calibrated rim circumference and thumb indentations engineered to provide predictable mechanical feedback across high-g cornering loads.
+            </p>
+</div>
+<div class="mt-space-lg flex items-center gap-space-2xs text-secondary font-label-caps text-label-caps">
+<span>TACTILE SPEC 38MM</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-space-lg flex flex-col justify-between hover:bg-surface-container transition-all">
+<div>
+<span class="font-label-mono-sm text-label-mono-sm text-secondary block mb-space-sm">02 / FOOTWELL</span>
+<h3 class="font-headline-sm text-headline-sm text-primary mb-space-xs">
+              Standard pedal travel
+            </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant font-light">
+              Linear resistance curve machined out of cold-forged aluminum with exact spatial offset relative to the floor pan.
+            </p>
+</div>
+<div class="mt-space-lg flex items-center gap-space-2xs text-secondary font-label-caps text-label-caps">
+<span>STROKE RATIO 1:1.2</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-space-lg flex flex-col justify-between hover:bg-surface-container transition-all">
+<div>
+<span class="font-label-mono-sm text-label-mono-sm text-secondary block mb-space-sm">03 / CONSOLE</span>
+<h3 class="font-headline-sm text-headline-sm text-primary mb-space-xs">
+              Fixed centre console height
+            </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant font-light">
+              Solid structural spine integrating primary gear selector toggles, haptic dial, and structural crash transmission member.
+            </p>
+</div>
+<div class="mt-space-lg flex items-center gap-space-2xs text-secondary font-label-caps text-label-caps">
+<span>DATUM ELEVATION +210MM</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 4: INTERIOR COMFORT -->
+<section class="w-full py-space-4xl bg-surface relative">
+<div class="max-w-max-width mx-auto px-margin-desktop">
+<div class="flex flex-col mb-space-2xl">
+<div class="font-label-caps text-label-caps text-secondary uppercase tracking-[0.25em] mb-space-xs">
+          INTERIOR COMFORT
+        </div>
+<h2 class="font-headline-lg text-headline-lg text-primary font-normal">
+          Acoustic & Thermal Equilibrium
+        </h2>
+</div>
+<!-- Two-column feature list containing required verbatim items -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter-desktop">
+<!-- Card A: Climate verbatim -->
+<div class="bg-surface-container-low p-space-xl flex flex-col justify-between">
+<div class="flex items-start justify-between mb-space-md">
+<span class="font-label-mono-sm text-label-mono-sm text-secondary">CLIMATE 01</span>
+<span class="material-symbols-outlined text-on-surface-variant">thermostat</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-primary mb-space-sm">
+              Climate control calibrated to standard metabolic comfort model
+            </h3>
+<p class="font-body-md text-body-md text-on-surface-variant font-light leading-relaxed">
+              Multi-point sensor arrays calculate ambient infrared radiation and humidity, matching air delivery vectors to standard physiological thermal dissipation curves.
+            </p>
+</div>
+<div class="mt-space-xl pt-space-sm flex items-center justify-between text-on-surface-variant font-label-mono-sm text-label-mono-sm">
+<span>EQUILIBRIUM: 21.5°C</span>
+<span>FLOW RATE: 4.8 M/S</span>
+</div>
+</div>
+<!-- Card B: Seats verbatim -->
+<div class="bg-surface-container-low p-space-xl flex flex-col justify-between">
+<div class="flex items-start justify-between mb-space-md">
+<span class="font-label-mono-sm text-label-mono-sm text-secondary">STRUCTURE 02</span>
+<span class="material-symbols-outlined text-on-surface-variant">airline_seat_recline_extra</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-primary mb-space-sm">
+              One-size-fits-all sport seats
+            </h3>
+<p class="font-body-md text-body-md text-on-surface-variant font-light leading-relaxed">
+              Monolithic bucket architecture trimmed in semi-aniline upholstery over multi-density polyurethane foam cores, formulated for sustained lateral holding.
+            </p>
+</div>
+<div class="mt-space-xl pt-space-sm flex items-center justify-between text-on-surface-variant font-label-mono-sm text-label-mono-sm">
+<span>FOAM DENSITY: 65 KG/M³</span>
+<span>BOLSTER ANGLE: 18°</span>
+</div>
+</div>
+<!-- Card C: Acoustic glass (Complementary) -->
+<div class="bg-surface-container-low p-space-xl flex flex-col justify-between">
+<div class="flex items-start justify-between mb-space-md">
+<span class="font-label-mono-sm text-label-mono-sm text-secondary">ACOUSTICS 03</span>
+<span class="material-symbols-outlined text-on-surface-variant">volume_off</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-primary mb-space-sm">
+              Dual-zone acoustic glass insulation
+            </h3>
+<p class="font-body-md text-body-md text-on-surface-variant font-light leading-relaxed">
+              Laminated sound-dampening acoustic film bonded within front windshield and side glazing assemblies mitigates buffeting and external wind frequencies up to 4,000 Hz.
+            </p>
+</div>
+<div class="mt-space-xl pt-space-sm flex items-center justify-between text-on-surface-variant font-label-mono-sm text-label-mono-sm">
+<span>SOUND ATTENUATION: -6.2 DB</span>
+<span>GLASS THICKNESS: 4.8MM</span>
+</div>
+</div>
+<!-- Card D: Active vibration suppression (Complementary) -->
+<div class="bg-surface-container-low p-space-xl flex flex-col justify-between">
+<div class="flex items-start justify-between mb-space-md">
+<span class="font-label-mono-sm text-label-mono-sm text-secondary">DYNAMICS 04</span>
+<span class="material-symbols-outlined text-on-surface-variant">graphic_eq</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-primary mb-space-sm">
+              Active vibration suppression chassis mounting
+            </h3>
+<p class="font-body-md text-body-md text-on-surface-variant font-light leading-relaxed">
+              Hydraulically damped subframe bushings eliminate harmonic chassis resonance at motorway cruising speeds, isolating unwanted powertrain feedback.
+            </p>
+</div>
+<div class="mt-space-xl pt-space-sm flex items-center justify-between text-on-surface-variant font-label-mono-sm text-label-mono-sm">
+<span>DAMPING FREQUENCY: 12-40 HZ</span>
+<span>HYDRAULIC COUPLING</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 5: CONFIGURATOR STRIP & RESERVATION -->
+<section class="w-full py-space-5xl bg-surface-container-lowest relative" id="reserve">
+<div class="max-w-max-width mx-auto px-margin-desktop">
+<div class="bg-surface-container-low p-space-2xl md:p-space-3xl relative overflow-hidden shadow-2xl">
+<!-- Subtle cockpit ambient gradient accent -->
+<div class="absolute top-0 right-0 w-96 h-96 bg-secondary/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop items-start">
+<!-- Left side briefing -->
+<div class="lg:col-span-5 mb-space-xl lg:mb-0">
+<div class="font-label-caps text-label-caps text-secondary uppercase tracking-[0.25em] mb-space-xs">
+              COMMISSION INTAKE
+            </div>
+<h2 class="font-headline-lg text-headline-lg text-primary font-normal mb-space-md">
+              Reserve your S4
+            </h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant font-light leading-relaxed mb-space-xl">
+              Secure priority allocation in the inaugural production wave. Each commission includes direct technical consultation with the Meridian vehicle engineering team.
+            </p>
+<div class="space-y-space-sm pt-space-sm">
+<div class="flex items-center gap-space-sm text-on-surface-variant font-label-mono-sm text-label-mono-sm">
+<span class="material-symbols-outlined text-secondary text-sm">check_circle</span>
+<span>ALLOCATION WINDOW: 2025/Q4 DELIVERY</span>
+</div>
+<div class="flex items-center gap-space-sm text-on-surface-variant font-label-mono-sm text-label-mono-sm">
+<span class="material-symbols-outlined text-secondary text-sm">check_circle</span>
+<span>BESPOKE TELEMETRY PROFILING INCLUDED</span>
+</div>
+<div class="flex items-center gap-space-sm text-on-surface-variant font-label-mono-sm text-label-mono-sm">
+<span class="material-symbols-outlined text-secondary text-sm">check_circle</span>
+<span>FULLY REFUNDABLE SECURITY DEPOSIT</span>
+</div>
+</div>
+</div>
+<!-- Right side form -->
+<div class="lg:col-span-7 bg-surface-container p-space-xl shadow-inner">
+<form class="space-y-space-lg" id="reservationForm" onsubmit="event.preventDefault(); document.getElementById('confirmationBadge').classList.remove('hidden');">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Title dropdown (Mr. and Mrs. only) -->
+<div>
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest block mb-space-2xs" for="titleField">
+                    Title
+                  </label>
+<select class="w-full bg-surface-container-low text-primary px-space-md py-space-sm font-body-md text-body-md focus:outline-none focus:bg-surface-bright transition-colors cursor-pointer appearance-none" id="titleField" required="" style="background-image: url('data:image/svg+xml;utf8,<svg fill=%22%23a7c8ff%22 height=%2224%22 viewBox=%220 0 24 24%22 width=%2224%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M7 10l5 5 5-5z%22/></svg>'); background-repeat: no-repeat; background-position: right 0.75rem center;">
+<option selected="" value="Mr.">Mr.</option>
+<option value="Mrs.">Mrs.</option>
+</select>
+</div>
+<!-- First name input -->
+<div class="md:col-span-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest block mb-space-2xs" for="firstNameField">
+                    First Name
+                  </label>
+<input class="w-full bg-surface-container-low text-primary px-space-md py-space-sm font-body-md text-body-md focus:outline-none focus:bg-surface-bright transition-colors placeholder:text-outline-variant" id="firstNameField" placeholder="E.g. James" required="" type="text"/>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Last name input -->
+<div>
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest block mb-space-2xs" for="lastNameField">
+                    Last Name
+                  </label>
+<input class="w-full bg-surface-container-low text-primary px-space-md py-space-sm font-body-md text-body-md focus:outline-none focus:bg-surface-bright transition-colors placeholder:text-outline-variant" id="lastNameField" placeholder="E.g. Harrison" required="" type="text"/>
+</div>
+<!-- Email address input -->
+<div>
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest block mb-space-2xs" for="emailField">
+                    Email Address
+                  </label>
+<input class="w-full bg-surface-container-low text-primary px-space-md py-space-sm font-body-md text-body-md focus:outline-none focus:bg-surface-bright transition-colors placeholder:text-outline-variant" id="emailField" placeholder="name@domain.com" required="" type="email"/>
+</div>
+</div>
+<!-- CTA Button: Reserve now -->
+<div class="pt-space-md flex flex-col sm:flex-row items-center justify-between gap-space-md">
+<button class="w-full sm:w-auto font-button-text text-button-text uppercase tracking-widest px-space-2xl py-space-md bg-secondary text-on-secondary hover:bg-primary transition-all duration-150 shadow-md flex items-center justify-center gap-space-xs" type="submit">
+<span>Reserve now</span>
+<span class="material-symbols-outlined text-sm">lock</span>
+</button>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">
+                  SECURE TOKEN TRANSIT // 256-BIT ENCRYPTION
+                </span>
+</div>
+<!-- Submission Confirmation Feedback (hidden by default) -->
+<div class="hidden p-space-md bg-surface-container-low flex items-center gap-space-sm" id="confirmationBadge">
+<span class="material-symbols-outlined text-secondary">verified</span>
+<span class="font-body-sm text-body-sm text-primary">
+                  Allocation slot requested. Your Meridian Concierge will contact you within 24 hours.
+                </span>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Sticky lower HUD bar with reservation reminder -->
+<div class="sticky bottom-0 w-full z-40 bg-surface-container-lowest/90 backdrop-blur-xl py-space-sm px-margin-desktop">
+<div class="max-w-max-width mx-auto flex items-center justify-between">
+<div class="hidden sm:flex items-center gap-space-lg">
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Platform</span>
+<span class="font-label-mono-sm text-label-mono-sm text-primary block">MERIDIAN S4 DUAL-MOTOR</span>
+</div>
+<div class="h-6 w-px bg-surface-variant"></div>
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Est. Range</span>
+<span class="font-label-mono-sm text-label-mono-sm text-primary block">580 KM WLTP</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md w-full sm:w-auto justify-between sm:justify-end">
+<div class="text-right sm:mr-space-md">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Starting From</span>
+<span class="font-headline-sm text-headline-sm text-primary block leading-none">$118,500</span>
+</div>
+<a class="font-button-text text-button-text uppercase tracking-widest px-space-xl py-space-xs bg-primary text-on-primary hover:bg-secondary hover:text-on-secondary transition-colors" href="#reserve">
+          Reserve now
+        </a>
+</div>
+</div>
+</div>
+</div></main><footer class="w-full bg-surface-container-lowest py-space-3xl"><div class="max-w-max-width mx-auto px-margin-desktop"><div class="grid grid-cols-1 md:grid-cols-3 gap-gutter-desktop mb-space-3xl"><div class="p-space-lg bg-surface-container-low"><blockquote class="font-body-lg text-body-lg text-on-surface italic mb-space-sm">“A driver's machine — uncompromising in its purity and technical dominance.”</blockquote><cite class="font-label-caps text-label-caps text-on-surface-variant uppercase not-italic block">Motor Weekly</cite></div><div class="p-space-lg bg-surface-container-low"><blockquote class="font-body-lg text-body-lg text-on-surface italic mb-space-sm">“An architectural triumph that redefines modern performance electrification.”</blockquote><cite class="font-label-caps text-label-caps text-on-surface-variant uppercase not-italic block">Automotive Architectural Journal</cite></div><div class="p-space-lg bg-surface-container-low"><blockquote class="font-body-lg text-body-lg text-on-surface italic mb-space-sm">“Precision aerospace engineering distilled into a cockpit of pure intent.”</blockquote><cite class="font-label-caps text-label-caps text-on-surface-variant uppercase not-italic block">Car & Pilot International</cite></div></div><div class="flex flex-col md:flex-row items-center justify-between gap-space-md pt-space-xl bg-surface-container-low/30 px-space-lg py-space-md"><nav class="flex flex-wrap items-center gap-space-lg" data-active-classes="text-primary"><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="privacy-policy" href="#">Privacy</a><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="terms-of-service" href="#">Terms</a><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="spec-disclosures" href="#">Spec Disclosures</a><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="careers" href="#">Careers</a></nav><p class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase tracking-wider">© 2025 MERIDIAN MOTORS CORP. ALL RIGHTS RESERVED.</p></div></div></footer></body></html>
