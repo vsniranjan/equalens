@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.npm/
+*.tsbuildinfo
+
+# Build output
+dist/
+build/
+.vite/
+extension/.output/
+
+# Cloudflare / Wrangler
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# Secrets — never commit. GEMINI_API_KEY lives in `wrangler secret put`
+# (prod) and api/.dev.vars (local, ignored above). See spec §3.5.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local tool config
+.devin/config.local.json
+*.local.json
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
+npm-debug.log*

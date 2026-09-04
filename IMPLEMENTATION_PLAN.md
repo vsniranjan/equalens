@@ -64,6 +64,35 @@ Plus `shared/` — TS types + design tokens + curated citation library.
 - `GEMINI_API_KEY` available (set as Worker secret, never client-side).
 - Chrome for loading the unpacked extension.
 
+**Version management:**
+- Repo: `github.com/vsniranjan/equalens`. **Trunk-based — work directly on
+  `main`.** No feature branches, no PRs: one person + one agent, so branching
+  would cost time and buy nothing.
+- **Commit at the end of every phase with a working build** (also a §3
+  invariant). Message format: `Phase N: <what shipped>`, e.g.
+  `Phase 5: heuristic scan, heatmap, findings panel, score`. **Push after
+  every phase commit** — the remote is the only backup; a dead laptop with
+  hours of unpushed work ends the project.
+- **Tag the demo.** When the full 60-second choreography (spec §4.3) runs
+  clean in Phase 9: `git tag -a demo-ready -m "Verified full demo run" &&
+  git push origin demo-ready`. Keep polishing `main` afterwards; if a
+  last-hour change breaks the climax, fall back to the tag in seconds
+  instead of debugging in front of judges.
+- **Secrets discipline** (spec §3.5) — two credentials, different rules:
+  - `GEMINI_API_KEY` — **never in git.** `wrangler secret put` for prod,
+    `api/.dev.vars` locally (gitignored). If it ever lands in a commit,
+    rotate it in the Google console; scrubbing history does not un-leak it.
+  - `X-EquaLens-Key` shared token — fine in `shared/config.ts`. It ships
+    inside the extension bundle anyway, so it is abuse-friction, not auth.
+- `.gitignore` covers `node_modules/`, build output (`dist/`, `.vite/`),
+  `.wrangler/`, `.dev.vars`, `.env*`, and `*.local.json`. It exists before
+  Phase 0 specifically because scaffolding creates `node_modules/`.
+- **Not worth doing:** Git LFS (6.6 MB of design PNGs is nothing, and it
+  adds a setup failure mode), conventional-commit tooling, changelogs,
+  history rewriting.
+- **Don't rebuild at the venue.** Keep the tested unpacked extension build
+  on disk before judging.
+
 **Verbatim "bias bait" strings** — these exact strings appear in the mock
 site content AND are matched by scan heuristics AND appear in the design
 mockups. Never paraphrase them; they keep design/demo/code in sync:
