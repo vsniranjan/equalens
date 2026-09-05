@@ -181,6 +181,7 @@ export class RedesignCoordinator {
             model.position = percent;
             comparisons[index]?.setPosition(percent);
           },
+          onDialogPositionChange: (position) => { model.dialogPosition = position; },
           onRefresh: () => comparisons[index]?.refresh(),
           onApprove: () => this.decide(transaction, index, true),
           onReject: () => this.decide(transaction, index, false),

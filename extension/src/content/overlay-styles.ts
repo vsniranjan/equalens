@@ -483,11 +483,15 @@ button { font: inherit; }
   pointer-events: auto;
   animation: eqx-comparison-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.eqx-redesign-comparison > header { display: flex; align-items: center; gap: 9px; padding: 12px 13px; border-bottom: 1px solid var(--eqx-border); background: color-mix(in srgb, var(--eqx-primary) 7%, var(--eqx-canvas)); }
-.eqx-redesign-comparison > header > span:last-child { display: grid; min-width: 0; gap: 1px; }
+.eqx-redesign-comparison > header { position: sticky; z-index: 1; top: 0; display: flex; align-items: center; gap: 9px; padding: 12px 13px; border-bottom: 1px solid var(--eqx-border); background: color-mix(in srgb, var(--eqx-primary) 7%, var(--eqx-canvas)); cursor: grab; touch-action: none; user-select: none; }
+.eqx-redesign-comparison > header:active, .eqx-redesign-comparison[data-dragging="true"] > header { cursor: grabbing; }
+.eqx-redesign-comparison > header:focus-visible { outline: 2px solid var(--eqx-focus); outline-offset: -3px; }
+.eqx-redesign-title { display: grid; min-width: 0; flex: 1; gap: 1px; }
 .eqx-redesign-comparison > header small { color: var(--eqx-primary); font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .eqx-redesign-comparison > header strong { overflow: hidden; font-size: 12px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
 .eqx-redesign-mark { display: grid; width: 25px; height: 25px; flex: none; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--eqx-primary) 12%, var(--eqx-surface)); color: var(--eqx-primary); font-size: 14px; font-weight: 800; }
+.eqx-redesign-move-hint { display: inline-flex; flex: none; align-items: center; gap: 3px; color: var(--eqx-muted); font-size: 8.5px; font-weight: 750; letter-spacing: .035em; text-transform: uppercase; }
+.eqx-redesign-move-hint i { font-size: 14px; font-style: normal; line-height: 1; }
 .eqx-comparison-control { display: grid; grid-template-columns: auto minmax(80px, 1fr) auto; align-items: center; gap: 9px; padding: 12px 13px 9px; background: var(--eqx-surface); }
 .eqx-comparison-control button { min-height: 28px; padding: 4px 7px; border: 1px solid transparent; border-radius: 5px; background: transparent; color: var(--eqx-muted); cursor: pointer; font-size: 9.5px; font-weight: 750; }
 .eqx-comparison-control button:hover { background: var(--eqx-canvas); color: var(--eqx-ink); }

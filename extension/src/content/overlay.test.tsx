@@ -204,6 +204,7 @@ describe("EquaLens overlay", () => {
     target.getBoundingClientRect = () => DOMRect.fromRect({ x: 80, y: 100, width: 500, height: 240 });
     document.body.append(target);
     const onPositionChange = vi.fn();
+    const onDialogPositionChange = vi.fn();
     const onApprove = vi.fn();
     const onReject = vi.fn();
     controller.showRedesignComparisons([{
@@ -218,6 +219,7 @@ describe("EquaLens overlay", () => {
       scoreAfter: 100,
       position: 50,
       onPositionChange,
+      onDialogPositionChange,
       onRefresh: vi.fn(),
       onApprove,
       onReject,
@@ -225,6 +227,9 @@ describe("EquaLens overlay", () => {
 
     expect(shadow.textContent).toContain("82 → 100");
     expect(shadow.textContent).toContain("+18");
+    const moveHandle = shadow.querySelector<HTMLElement>('[aria-label="Move comparison dialog. Use arrow keys or drag."]')!;
+    await act(async () => moveHandle.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "ArrowRight" })));
+    expect(onDialogPositionChange).toHaveBeenCalled();
     const before = [...shadow.querySelectorAll<HTMLButtonElement>("button")]
       .find((button) => button.textContent === "Before")!;
     await act(async () => before.click());
