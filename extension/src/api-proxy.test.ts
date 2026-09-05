@@ -61,7 +61,7 @@ describe("background API proxy", () => {
     const port: ScanPort = { name: "equalens-scan", postMessage: messages, onMessage: incoming.event, onDisconnect: disconnected.event };
     attachScanPort(port, fetcher);
     incoming.get()({ type: "start", requestId: "hung", body: scanRequest });
-    await vi.advanceTimersByTimeAsync(28_000);
+    await vi.advanceTimersByTimeAsync(60_000);
     expect(messages).toHaveBeenCalledWith(expect.objectContaining({ type: "error", status: 504 }));
   });
   it("adds the API token and returns one-shot JSON responses", async () => {

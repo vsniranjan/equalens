@@ -2,9 +2,10 @@ import { API_ORIGIN, EQUALENS_API_KEY } from "@equalens/shared/config";
 import type { Finding, ScanRequest } from "@equalens/shared/types";
 
 const API_PATHS = ["/analyze", "/scan", "/redesign", "/report"] as const;
-// Allow the Worker's 25-second AI deadline plus network overhead, while
-// finishing before Chrome's 30-second service-worker fetch deadline.
 const REQUEST_TIMEOUT_MS = 28_000;
+// A named port keeps the MV3 worker alive during a scan. Allow the API's
+// bounded primary + fallback window, plus transport overhead.
+const AI_REQUEST_TIMEOUT_MS = 60_000;
 const TIMEOUT_MESSAGE = "EquaLens request timed out. Please try again.";
 export type ApiPath = (typeof API_PATHS)[number];
 
@@ -63,7 +64,7 @@ export function attachScanPort(port: ScanPort, fetcher: typeof fetch = fetch): v
 }
 
 async function requestJson(message: ApiRequestMessage, fetcher: typeof fetch): Promise<Record<string, unknown>> {
-  const deadline = requestDeadline();
+  const deadline = requestDeadline(message.path === "/report" ? REQUEST_TIMEOUT_MS : AI_REQUEST_TIMEOUT_MS);
   try {
     const response = await fetcher(`${API_ORIGIN}${message.path}`, requestInit(message.body, deadline.signal));
     const data = await response.json() as unknown;
@@ -93,7 +94,7 @@ async function relayScan(
   signal: AbortSignal,
   isDisconnected: () => boolean,
 ): Promise<void> {
-  const deadline = requestDeadline();
+  const deadline = requestDeadline(AI_REQUEST_TIMEOUT_MS);
   post(port, isDisconnected, { type: "open", requestId: message.requestId });
   try {
     const response = await fetcher(`${API_ORIGIN}/scan`, requestInit(message.body, AbortSignal.any([signal, deadline.signal]), "application/x-ndjson"));
@@ -147,9 +148,9 @@ async function relayScan(
   }
 }
 
-function requestDeadline(): { signal: AbortSignal; clear: () => void } {
+function requestDeadline(milliseconds: number): { signal: AbortSignal; clear: () => void } {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), milliseconds);
   return { signal: controller.signal, clear: () => clearTimeout(timer) };
 }
 

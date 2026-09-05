@@ -1,7 +1,7 @@
 import { reset, SELF } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { EQUALENS_API_KEY } from "@equalens/shared/config";
-import { AI_TIMEOUT_MS, GEMINI_MODEL } from "../src/constants";
+import { AI_TIMEOUT_MS, GEMINI_MODEL, GEMINI_PRIMARY_TIMEOUT_MS } from "../src/constants";
 import analyzeRequest from "./fixtures/analyze.json";
 import redesignRequest from "./fixtures/redesign.json";
 import reportPayload from "./fixtures/report.json";
@@ -92,23 +92,24 @@ describe("API boundary", () => {
 
 describe("AI endpoints", () => {
   it("allows the free-tier models enough time to answer", () => {
-    expect(AI_TIMEOUT_MS).toBe(25_000);
+    expect(GEMINI_PRIMARY_TIMEOUT_MS).toBe(18_000);
+    expect(AI_TIMEOUT_MS).toBe(55_000);
   });
 
-  it("aborts an actually stalled AI request at the 25-second deadline without falling back", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => new Promise<Response>((_resolve, reject) => {
-      const signal = init?.signal;
-      if (!signal) throw new Error("AI request has no deadline");
-      signal.addEventListener("abort", () => reject(signal.reason), { once: true });
-    }));
-    const started = performance.now();
+  it("falls back to NIM when the primary provider times out", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      if (isGeminiUrl(url)) throw new DOMException("Primary deadline reached", "TimeoutError");
+      return nimResponse({ findings: [finding], summary: "Fallback completed the analysis." });
+    });
     const response = await post("/analyze?nocache=1", analyzeRequest);
-    expect(response.status).toBe(504);
-    await expect(response.json()).resolves.toEqual({ error: "AI service timed out" });
-    expect(performance.now() - started).toBeGreaterThanOrEqual(24_500);
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ findings: [finding], cached: false });
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
     expect(isGeminiUrl(fetchSpy.mock.calls[0]?.[0])).toBe(true);
-  }, 32_000);
+    expect(isNimUrl(fetchSpy.mock.calls[1]?.[0])).toBe(true);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("ai_provider_fallback"));
+  });
 
   // Runs before any test that rate limits a key, since cooled-down keys are skipped.
   it("rotates Gemini keys across consecutive requests", async () => {
@@ -300,7 +301,8 @@ describe("AI endpoints", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject(safe);
     expect(fetchSpy).toHaveBeenCalledTimes(2);
-    expect(fetchSpy.mock.calls[1]?.[1]?.signal).toBe(fetchSpy.mock.calls[0]?.[1]?.signal);
+    expect(fetchSpy.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
+    expect(fetchSpy.mock.calls[1]?.[1]?.signal).toBeInstanceOf(AbortSignal);
     expect(JSON.stringify(requestBody(fetchSpy.mock.calls[1]?.[1]).contents)).toContain("previous rewrite was rejected");
     const cached = await post("/redesign", redesignRequest);
     await expect(cached.json()).resolves.toMatchObject({ ...safe, cached: true });

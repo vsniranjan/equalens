@@ -1,4 +1,4 @@
-import { AI_TIMEOUT_MS } from "./constants";
+import { AI_TIMEOUT_MS, GEMINI_PRIMARY_TIMEOUT_MS } from "./constants";
 import { HttpError } from "./errors";
 import { generateWithGemini } from "./gemini";
 import { generateWithNim } from "./nim";
@@ -41,9 +41,8 @@ export function nimApiKeys(env: AiEnv): string[] {
   return definedKeys(env.NVIDIA_NIM_API_KEY_1, env.NVIDIA_NIM_API_KEY_2, env.NVIDIA_NIM_API_KEY_3);
 }
 
-// Gemini is primary (up to 10 rotated free-tier keys); NIM takes over when every Gemini
-// key is rate limited or failing. A 504 means the shared deadline is already spent, so
-// there is nothing left to fall back with.
+// Gemini is primary (up to 10 rotated free-tier keys). Its attempt has a shorter
+// deadline so a stalled provider still leaves time for NIM inside the overall budget.
 export async function generateStructured(env: AiEnv, options: GenerateOptions): Promise<unknown> {
   const signal = options.signal ?? AbortSignal.timeout(AI_TIMEOUT_MS);
   const geminiKeys = geminiApiKeys(env);
@@ -51,10 +50,13 @@ export async function generateStructured(env: AiEnv, options: GenerateOptions): 
 
   if (geminiKeys.length > 0) {
     try {
-      return await generateWithGemini({ apiKeys: geminiKeys, prompt: options.prompt, responseSchema: options.responseSchema, signal });
+      const geminiSignal = nimKeys.length > 0
+        ? AbortSignal.any([signal, AbortSignal.timeout(GEMINI_PRIMARY_TIMEOUT_MS)])
+        : signal;
+      return await generateWithGemini({ apiKeys: geminiKeys, prompt: options.prompt, responseSchema: options.responseSchema, signal: geminiSignal });
     } catch (error) {
-      const recoverable = error instanceof HttpError && (error.status === 502 || error.status === 503);
-      if (!recoverable || nimKeys.length === 0) throw error;
+      const recoverable = error instanceof HttpError && (error.status === 502 || error.status === 503 || error.status === 504);
+      if (!recoverable || signal.aborted || nimKeys.length === 0) throw error;
       console.warn(JSON.stringify({ event: "ai_provider_fallback", from: "gemini", to: "nim", detail: error.message }));
     }
   }
