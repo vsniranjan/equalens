@@ -13,7 +13,7 @@ const finding: Finding = {
 test("redesign preview can be reverted, kept, and submitted without losing existing form values", async ({ context, page }) => {
   await context.route(`${API_ORIGIN}/scan`, (route) => route.fulfill({ json: { findings: [], summary: "Done" } }));
   await context.route(`${API_ORIGIN}/redesign`, (route) => route.fulfill({ json: {
-    rewritten_html: route.request().postDataJSON().outerHTML, rationale: "Preserve all existing capabilities and expand fit.", changes: ["Expanded fit"],
+    rewritten_html: route.request().postDataJSON().outerHTML.replace("One-size-fits-all sport seats", "Adjustable sport seats for a broad range of body dimensions"), rationale: "Preserve all existing capabilities and expand fit.", changes: ["Expanded fit"],
   } }));
   await page.goto(DEMO_ORIGIN);
   await page.locator('[name="firstName"]').fill("Alex");

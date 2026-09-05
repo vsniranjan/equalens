@@ -7,7 +7,7 @@ const VARIANTS: Record<RedesignVariantId, string> = {
     <div class="eqx-variant-shell eqx-seat-variant" data-eqx-variant-content="seat-restraint">
       <header class="eqx-variant-heading">
         <p>Seat &amp; restraint system <span>Inclusive range validated</span></p>
-        <h2>Adaptive geometry for a wider occupant range</h2>
+        <h2 id="seat-title">Adaptive geometry for a wider occupant range</h2>
         <p>Restraint, lumbar, and head-support positions now adapt without reducing the original protection specification.</p>
       </header>
       <div class="eqx-variant-layout">
@@ -23,7 +23,7 @@ const VARIANTS: Record<RedesignVariantId, string> = {
                 <circle cx="710" cy="344" r="8" /><circle cx="710" cy="382" r="13" />
               </g>
               <path class="eqx-measure-line" d="M752 116h74M752 382h74M810 116v266" />
-              <text x="838" y="255">8-POSITION RANGE</text>
+              <text x="970" y="255" text-anchor="end">8-POSITION RANGE</text>
               <g class="eqx-lumbar-points"><circle cx="526" cy="306" r="9" /><circle cx="505" cy="336" r="9" /><circle cx="496" cy="368" r="9" /></g>
               <text x="390" y="438">4-WAY LUMBAR</text>
             </svg>
@@ -48,7 +48,7 @@ const VARIANTS: Record<RedesignVariantId, string> = {
   "controls-reach": `
     <div class="eqx-variant-shell eqx-controls-variant" data-eqx-variant-content="controls-reach">
       <header class="eqx-variant-heading eqx-variant-heading--split">
-        <div><p>Controls &amp; reach <span>Adjustable interface envelope</span></p><h2>Primary controls meet the driver</h2></div>
+        <div><p>Controls &amp; reach <span>Adjustable interface envelope</span></p><h2 id="controls-title">Primary controls meet the driver</h2></div>
         <p>Core functions are available at the wheel and console, with reach calibration stored per driver profile.</p>
       </header>
       <figure class="eqx-controls-visual">
@@ -73,7 +73,7 @@ const VARIANTS: Record<RedesignVariantId, string> = {
     <div class="eqx-variant-shell eqx-config-variant" data-eqx-variant-content="config-form">
       <div class="eqx-config-brief">
         <p class="eqx-variant-kicker">Commission intake <span>Fit profile added</span></p>
-        <h2>Reserve your S4</h2>
+        <h2 id="configure-title">Reserve your S4</h2>
         <p>Secure priority allocation in the inaugural production wave. Your optional fit profile prepares the cabin around body dimensions—not gender assumptions.</p>
         <ul><li>Allocation window: 2026/Q4 delivery</li><li>Bespoke telemetry profiling included</li><li>Fully refundable security deposit</li></ul>
       </div>

@@ -85,4 +85,45 @@ describe("Phase 7 generic redesign safeguards", () => {
     input.click();
     expect(clicks).toBe(1);
   });
+
+  it("applies root accessibility and styling attributes and restores them on undo", () => {
+    document.body.innerHTML = '<button id="target" class="old" style="width: 12px"></button>';
+    const target = document.querySelector<HTMLElement>("#target")!;
+    const snapshot = captureElementSnapshot(target);
+    applySanitizedRedesign(snapshot, sanitizeRedesignHtml(document, '<button id="target" class="accessible" aria-label="Open settings" style="min-width: 44px; min-height: 44px"></button>'));
+    expect(target.getAttribute("aria-label")).toBe("Open settings");
+    expect(target.style.minWidth).toBe("44px");
+    expect(target.className).toBe("accessible");
+    restoreElementSnapshot(snapshot);
+    expect(target.outerHTML).toBe('<button id="target" class="old" style="width: 12px"></button>');
+  });
+
+  it("preserves multiple selections and distinct checked states in a named group", () => {
+    document.body.innerHTML = '<section><select name="sizes" multiple><option selected>S</option><option selected>M</option><option>L</option></select><input type="checkbox" name="choice" value="a" checked><input type="checkbox" name="choice" value="b"></section>';
+    const target = document.querySelector("section")!;
+    const snapshot = captureElementSnapshot(target);
+    applySanitizedRedesign(snapshot, '<section><select name="sizes" multiple><option>XS</option><option>S</option><option>M</option><option>L</option></select><input type="checkbox" name="choice" value="b"><input type="checkbox" name="choice" value="a"><p>More sizes available</p></section>');
+    expect([...target.querySelector("select")!.selectedOptions].map((option) => option.value)).toEqual(["S", "M"]);
+    expect(target.querySelector<HTMLInputElement>('[value="b"]')!.checked).toBe(false);
+    expect(target.querySelector<HTMLInputElement>('[value="a"]')!.checked).toBe(true);
+    restoreElementSnapshot(snapshot);
+    expect([...target.querySelector("select")!.selectedOptions].map((option) => option.value)).toEqual(["S", "M"]);
+    expect(target.querySelector<HTMLInputElement>('[value="b"]')!.checked).toBe(false);
+    expect(target.querySelector<HTMLInputElement>('[value="a"]')!.checked).toBe(true);
+  });
+
+  it("retains page-owned control listeners after keeping a rewrite", () => {
+    document.body.innerHTML = '<section><button id="action">Continue</button></section>';
+    const target = document.querySelector("section")!;
+    const button = target.querySelector("button")!;
+    let clicks = 0;
+    button.addEventListener("click", () => { clicks += 1; });
+    const snapshot = captureElementSnapshot(target);
+    applySanitizedRedesign(snapshot, '<section><button id="action" aria-label="Continue to all options">Continue</button><p>All options remain available</p></section>');
+    target.querySelector("button")!.click();
+    expect(clicks).toBe(1);
+    restoreElementSnapshot(snapshot);
+    expect(target.querySelector("button")).toBe(button);
+    expect(button.hasAttribute("aria-label")).toBe(false);
+  });
 });

@@ -122,7 +122,7 @@ h1 { max-width: 960px; margin-bottom: 8px; font-size: clamp(3.25rem, 6.1vw, 5.75
 .form-row--title { grid-template-columns: minmax(120px, .45fr) 1fr; }
 .reservation-form label > span { display: block; margin-bottom: 6px; color: var(--text-muted); }
 .reservation-form input, .reservation-form select { width: 100%; min-height: 48px; padding: 0 14px; border: 1px solid transparent; border-radius: 0; background: var(--surface-low); color: var(--text); transition: border-color 150ms ease, background 150ms ease; }
-.reservation-form input::placeholder { color: #6f7681; }
+.reservation-form input::placeholder { color: #959da9; }
 .reservation-form input:focus, .reservation-form select:focus { border-color: var(--accent-strong); background: var(--surface-bright); outline: 0; }
 .form-actions { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-top: 12px; }
 .form-actions > span { color: var(--text-muted); font-family: "JetBrains Mono", monospace; font-size: 8px; text-align: right; }
@@ -144,7 +144,7 @@ h1 { max-width: 960px; margin-bottom: 8px; font-size: clamp(3.25rem, 6.1vw, 5.75
 .footer-meta nav { display: flex; gap: 24px; }
 .footer-meta p { margin: 0; }
 
-.js-ready .reveal { opacity: 0; transform: translateY(22px); transition: opacity 700ms ease, transform 700ms cubic-bezier(.2,.75,.25,1); }
+.js-ready .reveal { opacity: 1; transform: none; }
 .js-ready .reveal.is-visible { opacity: 1; transform: none; }
 @keyframes hero-in { from { opacity: 0; transform: scale(1.035); } to { opacity: 1; transform: scale(1); } }
 

@@ -277,6 +277,12 @@ function OverlayView({
     : analysisIndicator.mode === "alert" ? analysisIndicator.count : 0;
   const position = buddyPosition(selection?.rect ?? null, viewport, buddyStyle);
   const side = position.x > viewport.width / 2 ? "left" : "right";
+  const popoverLeft = (width: number): number => {
+    const buddyWidth = buddyStyle === "minimal" ? 104 : 44;
+    const preferred = side === "left" ? position.x - width - 8 : position.x + buddyWidth + 8;
+    return clamp(preferred, 12, viewport.width - width - 12) - position.x;
+  };
+  const analysisWidth = Math.min(370, viewport.width - 24);
 
   useEffect(() => {
     if (menuOpen) firstAction.current?.focus();
@@ -353,7 +359,7 @@ function OverlayView({
         </button>
 
         {menuOpen && (
-          <div className="eqx-popover" data-side={side} role="menu" aria-label="EquaLens actions">
+          <div className="eqx-popover" data-side={side} role="menu" aria-label="EquaLens actions" style={{ left: popoverLeft(214), right: "auto", top: Math.min(0, viewport.height - position.y - 220) }}>
             <div className="eqx-menu-header">EquaLens</div>
             <div className="eqx-menu-list">
               <MenuAction ref={firstAction} onClick={() => runAction("scan")}>Scan page</MenuAction>
@@ -370,7 +376,7 @@ function OverlayView({
             data-side={side}
             data-vertical={position.y > viewport.height / 2 ? "bottom" : "top"}
             hidden={menuOpen}
-            style={{ maxHeight: position.y > viewport.height / 2 ? position.y + 32 : viewport.height - position.y - 12 }}
+            style={{ left: popoverLeft(analysisWidth), right: "auto", width: analysisWidth, maxHeight: position.y > viewport.height / 2 ? position.y + 32 : viewport.height - position.y - 12 }}
           >
             <AnalysisCard
               request={selection.request}

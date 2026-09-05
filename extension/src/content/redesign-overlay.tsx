@@ -5,6 +5,7 @@ export interface RedesignComparisonModel {
   id: string;
   target: HTMLElement;
   finding: Finding;
+  targetCount?: number;
   rationale: string;
   changes: readonly string[];
   scoreBefore: number;
@@ -25,11 +26,8 @@ export function RedesignComparison({ model, viewport }: {
   viewport: { width: number; height: number };
 }) {
   const [position, setPosition] = useState(50);
-  const rect = model.target.getBoundingClientRect();
   const width = Math.min(360, viewport.width - 24);
-  const left = clamp(rect.left + (rect.width - width) / 2, 12, viewport.width - width - 12);
-  const below = rect.bottom + 12;
-  const top = below < viewport.height - 238 ? below : Math.max(12, rect.top - 226);
+  const left = Math.max(12, (viewport.width - width) / 2);
 
   useEffect(() => {
     model.onPositionChange(position);
@@ -44,11 +42,11 @@ export function RedesignComparison({ model, viewport }: {
     <section
       className="eqx-redesign-comparison"
       aria-label="Before and after redesign comparison"
-      style={{ left, top, width }}
+      style={{ left, bottom: 12, width }}
     >
       <header>
         <span className="eqx-redesign-mark" aria-hidden="true">↔</span>
-        <span><small>Redesign preview</small><strong>{model.finding.title}</strong></span>
+        <span><small>Redesign preview</small><strong>{(model.targetCount ?? 1) > 1 ? `${model.targetCount} areas redesigned` : model.finding.title}</strong></span>
       </header>
 
       <div className="eqx-comparison-control">
@@ -120,8 +118,4 @@ export function RedesignNoticeView({ notice, onDismiss }: { notice: RedesignNoti
       <button type="button" aria-label="Dismiss score update" onClick={onDismiss}>×</button>
     </div>
   );
-}
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(Math.max(value, minimum), maximum);
 }

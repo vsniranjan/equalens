@@ -58,9 +58,6 @@ button { font: inherit; }
 .eqx-buddy-position[data-buddy-style="minimal"] { width: 104px; height: 34px; }
 .eqx-buddy-position[data-buddy-style="minimal"] .eqx-popover { right: 112px; }
 .eqx-buddy-position[data-buddy-style="minimal"] .eqx-popover[data-side="right"] { right: auto; left: 112px; }
-.eqx-buddy-position[data-buddy-style="minimal"] { width: 104px; height: 34px; }
-.eqx-buddy-position[data-buddy-style="minimal"] .eqx-popover { right: 112px; }
-.eqx-buddy-position[data-buddy-style="minimal"] .eqx-popover[data-side="right"] { right: auto; left: 112px; }
 
 .eqx-buddy {
   position: relative;

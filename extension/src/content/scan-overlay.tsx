@@ -161,7 +161,8 @@ export function ScanOverlay({ document, findings, scanStatus, reportStatus, onCl
           <button
             className="eqx-button eqx-button-primary"
             type="button"
-            disabled={!activeFindings.some((finding) => finding.redesignable)}
+            disabled={scanStatus.mode === "scanning" || !activeFindings.some((finding) => finding.redesignable)}
+            title={scanStatus.mode === "scanning" ? "Wait for the deep scan to finish reviewing the page" : undefined}
             onClick={() => onAction("redesign-all")}
           >
             Redesign all

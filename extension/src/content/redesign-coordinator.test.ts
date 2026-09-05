@@ -152,4 +152,28 @@ describe("Phase 7 redesign transaction coordinator", () => {
     expect(requestRedesign).not.toHaveBeenCalled();
     expect(coordinator.hasOpenPreview()).toBe(false);
   });
+
+  it("resolves related findings when a single action replaces their whole demo section", async () => {
+    document.body.innerHTML = '<section data-equalens-variant="seat-restraint"><p id="restraint">Legacy restraint reference</p><p id="headrest">Standard fit</p></section>';
+    const items = [finding("restraint", "#restraint"), finding("headrest", "#headrest")];
+    const { coordinator, harness, findings } = setup(items, vi.fn().mockResolvedValue(response("<p>Expanded fit</p>")));
+    await coordinator.redesignFromPanel([items[0]!]);
+    harness.comparison()?.onKeep();
+    expect(findings().every(({ fixed }) => fixed)).toBe(true);
+  });
+
+  it("keeps values entered while the redesign request was pending, including on undo", async () => {
+    document.body.innerHTML = '<section id="form"><input name="firstName"><p>Original guidance</p></section>';
+    const item = finding("form", "#form");
+    let finish!: (response: RedesignResponse) => void;
+    const pending = new Promise<RedesignResponse>((resolve) => { finish = resolve; });
+    const { coordinator, harness } = setup([item], () => pending);
+    const run = coordinator.redesignFromPanel([item]);
+    document.querySelector("input")!.value = "Typed while waiting";
+    finish(response('<section id="form"><input name="firstName"><p>Original guidance with more options</p></section>'));
+    await run;
+    expect(document.querySelector("input")!.value).toBe("Typed while waiting");
+    harness.comparison()?.onRevert();
+    expect(document.querySelector("input")!.value).toBe("Typed while waiting");
+  });
 });

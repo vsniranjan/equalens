@@ -43,7 +43,7 @@ interface AppliedRedesign {
 
 interface ActiveTransaction {
   applied: AppliedRedesign[];
-  comparison: ReturnType<typeof createComparisonSnapshot>;
+  comparisons: ReturnType<typeof createComparisonSnapshot>[];
   origin: RedesignOrigin;
   scoreBefore: number;
   scoreAfter: number;
@@ -101,6 +101,13 @@ export class RedesignCoordinator {
 
     const plan = createPlan(this.options.document, findings);
     if (plan.length === 0) throw new Error("No redesignable page element could be located.");
+    for (const item of plan.filter(({ variant }) => variant)) {
+      const related = this.options.getFindings().filter((finding) => {
+        const element = finding.selector ? safeQuery(this.options.document, finding.selector) : null;
+        return !finding.fixed && finding.redesignable && element && item.target.contains(element);
+      });
+      item.findingIds = [...new Set([...item.findingIds, ...related.map(({ id }) => id)])];
+    }
     this.running = true;
     const generation = ++this.generation;
     this.options.onBeforeRun();
@@ -113,7 +120,7 @@ export class RedesignCoordinator {
     });
 
     const applied: AppliedRedesign[] = [];
-    let pendingComparison: ReturnType<typeof createComparisonSnapshot> | null = null;
+    const comparisons: ReturnType<typeof createComparisonSnapshot>[] = [];
     this.pending = applied;
     try {
       for (const [index, item] of plan.entries()) {
@@ -132,8 +139,7 @@ export class RedesignCoordinator {
       this.assertActive(generation);
       const primary = applied[0];
       if (!primary) throw new Error("No redesign was applied.");
-      const comparison = createComparisonSnapshot(primary.snapshot);
-      pendingComparison = comparison;
+      for (const result of applied) comparisons.push(createComparisonSnapshot(result.snapshot));
       focusTarget(this.options.document, primary.snapshot.target);
       const scoreBefore = score(this.options.getFindings());
       const fixedIds = new Set(applied.flatMap(({ findingIds }) => findingIds));
@@ -143,27 +149,27 @@ export class RedesignCoordinator {
           ? { ...finding, fixed: true }
           : finding
       )));
-      const transaction: ActiveTransaction = { applied, comparison, origin, scoreBefore, scoreAfter };
+      const transaction: ActiveTransaction = { applied, comparisons, origin, scoreBefore, scoreAfter };
       this.active = transaction;
       this.pending = [];
-      pendingComparison = null;
       this.options.overlay.setRedesignNotice(null);
       this.options.overlay.showRedesignComparison({
         id: `${generation}:${primary.finding.id}`,
         target: primary.snapshot.target,
         finding: primary.finding,
+        targetCount: applied.length,
         rationale: primary.response.rationale,
         changes: primary.response.changes,
         scoreBefore,
         scoreAfter,
-        onPositionChange: (percent) => comparison.setPosition(percent),
-        onRefresh: () => comparison.refresh(),
+        onPositionChange: (percent) => comparisons.forEach((comparison) => comparison.setPosition(percent)),
+        onRefresh: () => comparisons.forEach((comparison) => comparison.refresh()),
         onKeep: () => this.keep(transaction),
         onRevert: () => this.revert(transaction),
       });
       this.options.onPreviewReady?.();
     } catch (error) {
-      pendingComparison?.destroy();
+      comparisons.forEach((comparison) => comparison.destroy());
       for (const result of [...applied].reverse()) restoreElementSnapshot(result.snapshot);
       this.pending = [];
       if (error instanceof RedesignCancelled) return;
@@ -177,7 +183,6 @@ export class RedesignCoordinator {
   }
 
   private async apply(item: PlannedRedesign, generation: number): Promise<AppliedRedesign> {
-    const snapshot = captureElementSnapshot(item.target);
     const originalOuterHtml = item.target.outerHTML;
     const requestOuterHtml = item.variant ? item.requestTarget.outerHTML : originalOuterHtml;
     const baseRequest: RedesignRequest = {
@@ -195,6 +200,7 @@ export class RedesignCoordinator {
     if (!item.target.isConnected) throw new Error("The page replaced this target. Scan again to refresh its location.");
 
     if (item.variant) {
+      const snapshot = captureElementSnapshot(item.target);
       applyRedesignVariant(item.target);
       preserveRedesignedFormState(snapshot);
       revealRedesignedText(item.target, snapshot.originalHtml);
@@ -215,13 +221,22 @@ export class RedesignCoordinator {
         throw new Error("Couldn't produce a capability-preserving redesign");
       }
     }
-    applySanitizedRedesign(snapshot, sanitized);
+    if (!item.target.isConnected) throw new Error("The page replaced this target. Scan again to refresh its location.");
+    const snapshot = captureElementSnapshot(item.target);
+    const original = item.target.cloneNode(true);
+    try {
+      applySanitizedRedesign(snapshot, sanitized);
+      if (item.target.isEqualNode(original)) throw new Error("The redesign did not change this element. Try again to generate a new proposal.");
+    } catch (error) {
+      restoreElementSnapshot(snapshot);
+      throw error;
+    }
     return { snapshot, finding: item.finding, findingIds: item.findingIds, response };
   }
 
   private keep(transaction: ActiveTransaction): void {
     if (this.active !== transaction) return;
-    transaction.comparison.destroy();
+    transaction.comparisons.forEach((comparison) => comparison.destroy());
     this.active = null;
     this.options.overlay.showRedesignComparison(null);
     if (transaction.origin === "panel") this.options.overlay.openPanel();
@@ -248,7 +263,7 @@ export class RedesignCoordinator {
   private revertActive(reopenPanel: boolean): void {
     const transaction = this.active;
     if (!transaction) return;
-    transaction.comparison.destroy();
+    transaction.comparisons.forEach((comparison) => comparison.destroy());
     for (const result of [...transaction.applied].reverse()) restoreElementSnapshot(result.snapshot);
     this.active = null;
     this.options.overlay.showRedesignComparison(null);
@@ -313,6 +328,7 @@ function safeQuery(document: Document, selector: string): Element | null {
 }
 
 function genericTarget(element: Element): HTMLElement | null {
+  if (element.matches("h1, h2, h3, h4, h5, h6")) return element.closest<HTMLElement>("article") ?? element as HTMLElement;
   if (element instanceof HTMLElement && !element.matches("input, img, br, hr")) return element;
   const label = element.closest<HTMLElement>("label");
   return label ?? element.parentElement;
