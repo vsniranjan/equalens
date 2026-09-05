@@ -2,6 +2,7 @@ import { calculateInclusionScore } from "@equalens/shared/tokens";
 import type { Category, Finding } from "@equalens/shared/types";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FindingExplanation } from "./analysis-card";
+import { getRedesignAvailability, type RedesignAvailability } from "./redesign-coordinator";
 import type { ViewportRect } from "./selection";
 
 export type ScanPanelAction = "redesign-finding" | "redesign-all" | "export-report";
@@ -29,6 +30,7 @@ interface ScanOverlayProps {
 interface PositionedFinding {
   finding: Finding;
   approximate: boolean;
+  redesign: RedesignAvailability;
   rect: ViewportRect | null;
 }
 
@@ -45,10 +47,12 @@ export function ScanOverlay({ document, findings, scanStatus, reportStatus, onCl
     return {
       finding,
       approximate: element === null,
+      redesign: getRedesignAvailability(document, finding),
       rect: element ? rectForElement(element) : null,
     };
   });
   const activeFindings = findings.filter((finding) => !finding.fixed);
+  const availableRedesigns = positioned.filter(({ finding, redesign }) => !finding.fixed && redesign.available).length;
   const score = scoreFindings(findings);
 
   useEffect(() => {
@@ -135,10 +139,11 @@ export function ScanOverlay({ document, findings, scanStatus, reportStatus, onCl
                     <span>{group.some(({ finding }) => finding.severity.endsWith("high")) ? "High impact" : categoryDescriptor(category)}</span>
                   </header>
                   <div className="eqx-finding-rows">
-                    {group.map(({ finding, approximate }) => (
+                    {group.map(({ finding, approximate, redesign }) => (
                       <FindingRow
                         finding={finding}
                         approximate={approximate}
+                        redesign={redesign}
                         expanded={expandedId === finding.id}
                         key={finding.id}
                         onFocus={() => focusFinding(finding)}
@@ -158,14 +163,23 @@ export function ScanOverlay({ document, findings, scanStatus, reportStatus, onCl
           {reportStatus.mode === "error" && (
             <p className="eqx-report-error" role="alert">{reportStatus.message}</p>
           )}
+          {scanStatus.mode === "complete" && activeFindings.length > 0 && availableRedesigns < activeFindings.length && (
+            <p className="eqx-redesign-coverage">
+              <strong>{availableRedesigns} of {activeFindings.length}</strong> open findings can be redesigned automatically. Open each finding to see what requires manual action.
+            </p>
+          )}
           <button
             className="eqx-button eqx-button-primary"
             type="button"
-            disabled={scanStatus.mode === "scanning" || !activeFindings.some((finding) => finding.redesignable)}
-            title={scanStatus.mode === "scanning" ? "Wait for the deep scan to finish reviewing the page" : undefined}
+            disabled={scanStatus.mode === "scanning" || availableRedesigns === 0}
+            title={scanStatus.mode === "scanning"
+              ? "Wait for the AI scan to finish reviewing the page"
+              : availableRedesigns === 0 ? "No open finding has an editable page element" : undefined}
             onClick={() => onAction("redesign-all")}
           >
-            Redesign all
+            {availableRedesigns === 0 && activeFindings.length > 0
+              ? "No automatic redesigns"
+              : availableRedesigns < activeFindings.length ? `Redesign ${availableRedesigns} available` : "Redesign all"}
           </button>
           <button
             className="eqx-button eqx-button-secondary"
@@ -209,9 +223,10 @@ function rectForElement(element: Element): ViewportRect | null {
   };
 }
 
-function FindingRow({ finding, approximate, expanded, onFocus, onToggle, onMarkFixed, onRedesign }: {
+function FindingRow({ finding, approximate, redesign, expanded, onFocus, onToggle, onMarkFixed, onRedesign }: {
   finding: Finding;
   approximate: boolean;
+  redesign: RedesignAvailability;
   expanded: boolean;
   onFocus: () => void;
   onToggle: () => void;
@@ -237,6 +252,7 @@ function FindingRow({ finding, approximate, expanded, onFocus, onToggle, onMarkF
           <span className="eqx-finding-tags">
             {finding.stereotype && <span className="eqx-stereotype-chip">Stereotype</span>}
             {approximate && <span className="eqx-approximate-chip">Location approximate</span>}
+            {!finding.fixed && !redesign.available && <span className="eqx-unavailable-chip">No auto-redesign</span>}
             {finding.fixed && <span className="eqx-fixed-chip">Resolved</span>}
           </span>
         </span>
@@ -245,9 +261,15 @@ function FindingRow({ finding, approximate, expanded, onFocus, onToggle, onMarkF
       {expanded && (
         <div className="eqx-finding-details" id={detailsId}>
           <FindingExplanation finding={finding} />
+          {!finding.fixed && !redesign.available && (
+            <div className="eqx-redesign-limitation" role="note">
+              <strong>Automatic redesign unavailable</strong>
+              <span>{redesign.message}</span>
+            </div>
+          )}
           <div className="eqx-finding-actions">
-            <button className="eqx-button eqx-button-primary" type="button" disabled={!finding.redesignable || finding.fixed} onClick={onRedesign}>
-              Redesign this
+            <button className="eqx-button eqx-button-primary" type="button" disabled={!redesign.available} onClick={onRedesign}>
+              {redesign.available ? "Redesign this" : redesign.buttonLabel}
             </button>
             <button className="eqx-button eqx-button-secondary" type="button" disabled={finding.fixed} onClick={onMarkFixed}>
               {finding.fixed ? "Marked fixed" : "Mark fixed"}

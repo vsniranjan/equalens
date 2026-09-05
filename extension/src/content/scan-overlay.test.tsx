@@ -81,6 +81,8 @@ describe("Phase 5 scan overlay", () => {
       .toContain("translate3d(40px, 80px, 0)");
     expect(groups.map(({ dataset }) => dataset.category)).toEqual(["safety", "language"]);
     expect(shadow.textContent).toContain("Location approximate");
+    expect(shadow.textContent).toContain("No auto-redesign");
+    expect(shadow.textContent).toContain("1 of 2 open findings can be redesigned automatically");
     expect(shadow.textContent).toContain("Stereotype");
     expect(shadow.querySelector('[data-testid="alert-count"]')?.textContent).toBe("2");
     expect(shadow.querySelector('[data-testid="inclusion-score"]')?.textContent).toBe("79");
@@ -136,6 +138,37 @@ describe("Phase 5 scan overlay", () => {
       .find((button) => button.textContent === "Export report")!;
     await act(async () => exportReport.click());
     expect(onScanAction).toHaveBeenCalledWith("export-report", undefined, [safetyFinding]);
+  });
+
+  it("explains missing and oversized redesign targets before an action can run", async () => {
+    document.body.innerHTML = `<section id="large-target">${"Detailed content ".repeat(1_100)}</section>`;
+    const missing = { ...approximateFinding, selector: null };
+    const large = { ...safetyFinding, id: "large", selector: "#large-target" };
+    const advisory = { ...safetyFinding, id: "advisory", title: "Policy-level finding", selector: "#large-target", redesignable: false };
+    controller = mountOverlay();
+    await act(async () => {
+      controller!.showScan([missing, large, advisory]);
+      controller!.setScanStatus({ mode: "complete" });
+    });
+    const shadow = controller.host.shadowRoot!;
+    const summaries = [...shadow.querySelectorAll<HTMLButtonElement>(".eqx-finding-summary")];
+
+    await act(async () => summaries.find((button) => button.textContent?.includes(missing.title))!.click());
+    expect(shadow.textContent).toContain("The AI found an issue but could not tie it to a specific page element");
+    expect([...shadow.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "No editable location")?.disabled).toBe(true);
+
+    await act(async () => summaries.find((button) => button.textContent?.includes(large.title))!.click());
+    expect(shadow.textContent).toContain("This section is too large to redesign safely in one AI request");
+    expect([...shadow.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "Section too large")?.disabled).toBe(true);
+
+    await act(async () => summaries.find((button) => button.textContent?.includes(advisory.title))!.click());
+    expect(shadow.textContent).toContain("needs a broader product, policy, or design decision");
+    expect([...shadow.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "Recommendation only")?.disabled).toBe(true);
+    expect([...shadow.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "No automatic redesigns")?.disabled).toBe(true);
   });
 
   it("locks report export while preparing and exposes a retryable error", async () => {

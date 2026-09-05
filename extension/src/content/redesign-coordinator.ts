@@ -35,6 +35,12 @@ interface PlannedRedesign {
   variant: boolean;
 }
 
+export type RedesignAvailability =
+  | { available: true }
+  | { available: false; buttonLabel: string; message: string };
+
+const MAX_REDESIGN_HTML_LENGTH = 16_000;
+
 interface AppliedRedesign {
   snapshot: ElementSnapshot;
   finding: Finding;
@@ -103,7 +109,12 @@ export class RedesignCoordinator {
     if (this.active) throw new Error("Keep or revert the current preview before starting another redesign.");
 
     const plan = createPlan(this.options.document, findings);
-    if (plan.length === 0) throw new Error("No redesignable page element could be located.");
+    if (plan.length === 0) {
+      const unavailable = findings
+        .map((finding) => getRedesignAvailability(this.options.document, finding))
+        .find((availability) => !availability.available);
+      throw new Error(unavailable?.message ?? "No redesignable page element could be located.");
+    }
     for (const item of plan.filter(({ variant }) => variant)) {
       const related = this.options.getFindings().filter((finding) => {
         const element = finding.selector ? safeQuery(this.options.document, finding.selector) : null;
@@ -204,10 +215,6 @@ export class RedesignCoordinator {
       pageTitle: this.options.document.title.trim() || this.options.document.location.hostname || "Untitled page",
       pageUrl: this.options.document.location.href,
     };
-    if (baseRequest.outerHTML.length > 16_000) {
-      throw new Error("This element is too large to redesign safely in one pass.");
-    }
-
     let response = validResponse(await this.options.requestRedesign(baseRequest));
     this.assertActive(generation);
     if (!item.target.isConnected) throw new Error("The page replaced this target. Scan again to refresh its location.");
@@ -313,23 +320,14 @@ export class RedesignCoordinator {
 function createPlan(document: Document, findings: readonly Finding[]): PlannedRedesign[] {
   const byTarget = new Map<HTMLElement, PlannedRedesign>();
   for (const finding of findings) {
-    if (finding.fixed || !finding.redesignable || !finding.selector) continue;
-    const selected = safeQuery(document, finding.selector);
-    if (!selected || selected.closest("#equalens-root")) continue;
-    const variantTarget = findRedesignVariantTarget(selected);
-    const target = variantTarget ?? genericTarget(selected);
-    if (!target) continue;
+    const planned = planFinding(document, finding);
+    if (!planned || redesignHtml(planned).length > MAX_REDESIGN_HTML_LENGTH) continue;
+    const { target } = planned;
     const current = byTarget.get(target);
     if (current) {
       current.findingIds.push(finding.id);
     } else {
-      byTarget.set(target, {
-        target,
-        requestTarget: selected,
-        finding,
-        findingIds: [finding.id],
-        variant: variantTarget !== null,
-      });
+      byTarget.set(target, planned);
     }
   }
   const withoutOverlaps: PlannedRedesign[] = [];
@@ -347,6 +345,62 @@ function createPlan(document: Document, findings: readonly Finding[]): PlannedRe
     withoutOverlaps.push(item);
   }
   return withoutOverlaps.sort((left, right) => variantPriority(left.target) - variantPriority(right.target));
+}
+
+export function getRedesignAvailability(document: Document, finding: Finding): RedesignAvailability {
+  if (finding.fixed) {
+    return { available: false, buttonLabel: "Already resolved", message: "This finding is already marked as resolved." };
+  }
+  if (!finding.redesignable) {
+    return {
+      available: false,
+      buttonLabel: "Recommendation only",
+      message: "This finding needs a broader product, policy, or design decision and cannot be fixed by rewriting one page element. Address it manually, then mark it fixed.",
+    };
+  }
+  if (!finding.selector) {
+    return {
+      available: false,
+      buttonLabel: "No editable location",
+      message: "The AI found an issue but could not tie it to a specific page element. Locate and update the relevant content manually, then mark it fixed.",
+    };
+  }
+  const planned = planFinding(document, finding);
+  if (!planned) {
+    return {
+      available: false,
+      buttonLabel: "Location unavailable",
+      message: "The matched page element is missing or cannot be edited safely. Scan the page again, or update the relevant content manually and mark it fixed.",
+    };
+  }
+  if (redesignHtml(planned).length > MAX_REDESIGN_HTML_LENGTH) {
+    return {
+      available: false,
+      buttonLabel: "Section too large",
+      message: "This section is too large to redesign safely in one AI request. Select a smaller element or split the content into smaller sections first.",
+    };
+  }
+  return { available: true };
+}
+
+function planFinding(document: Document, finding: Finding): PlannedRedesign | null {
+  if (finding.fixed || !finding.redesignable || !finding.selector) return null;
+  const selected = safeQuery(document, finding.selector);
+  if (!selected || selected.closest("#equalens-root")) return null;
+  const variantTarget = findRedesignVariantTarget(selected);
+  const target = variantTarget ?? genericTarget(selected);
+  if (!target) return null;
+  return {
+    target,
+    requestTarget: selected,
+    finding,
+    findingIds: [finding.id],
+    variant: variantTarget !== null,
+  };
+}
+
+function redesignHtml(planned: PlannedRedesign): string {
+  return planned.variant ? planned.requestTarget.outerHTML : planned.target.outerHTML;
 }
 
 function safeQuery(document: Document, selector: string): Element | null {

@@ -20,6 +20,7 @@ Tested September 5, 2026 against the locally built extension and Meridian mock s
 | Page scans mixed local rule-based findings with the AI report, producing results before AI analysis completed and retaining them after AI failures. | Remove the local detector and merge layer. Scans now begin empty, accept only `source: "ai"` findings, replace results from the one-shot fallback, and clear results before retry. Browser tests verify empty error states and successful recovery. |
 | A newly opened scan displayed a score of 100 before the AI report completed, making the pending state look like a completed result. | Enter the scanning state on the panel's first render, display a pending dash instead of a numeric score, and reserve scores for completed reports. The progress surface now uses a prominent high-contrast status band, a constant-speed indeterminate loop, and reduced-motion support. |
 | Redesign-all used one shared comparison slider and one all-or-nothing decision for every changed section. | Give each component an independent target-bound comparison, preserved slider position, and Approve/Reject actions. Only the component nearest the viewport center shows its review surface; accepted findings update the final score while rejected components restore exactly. |
+| Findings offered redesign buttons even when the AI identified no exact page element, classified the issue as advisory, or matched a section too large for a safe rewrite. | Evaluate redesign availability before rendering actions. Each unavailable card now carries a visible “No auto-redesign” label, explains the exact limitation and manual next step, and uses a disabled reason-specific button. The bulk action reports how many findings it can handle and skips unavailable targets. |
 | The minimal companion's menu and explanation card overflowed narrow screens. | Clamp popover positions to the viewport for both companion styles. Browser tests cover 320 px. |
 | Mock-site reveal styling hid content until a scrolling observer fired. | Keep content visible by default, including snapshots and reduced-motion browsing. |
 | Form placeholders had weak contrast; a diagram label extended beyond its SVG. | Increase placeholder contrast and anchor the label inside the diagram. |
@@ -27,7 +28,7 @@ Tested September 5, 2026 against the locally built extension and Meridian mock s
 ## Validation
 
 - TypeScript: `npm run typecheck` passed.
-- Unit suites: shared 3, extension 68, API 21, mock site 5; all passed (97 total across the runs).
+- Unit suites: shared 3, extension 70, API 21, mock site 5; all passed (99 total across the runs).
 - Full browser suite: 28 passed, including onboarding/settings, selection analysis, offline and HTTP-error recovery, stale-scan cancellation, malformed results, strict CSP, frames, report retry/timeout, PDF printing, throttling, form submission, redesign rollback, and responsive layouts.
 - Live API diagnostic: selection analysis, deep scan, redesign requests, and report export passed before this local UI iteration. The current component-review UI was verified against mocked API responses in Chromium.
 - Local extension and mock-site production builds passed. The API dry-run build also completed; no deployment was performed.

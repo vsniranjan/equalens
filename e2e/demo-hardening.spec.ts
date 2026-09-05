@@ -163,17 +163,28 @@ test("offline selection and scan both show retry states", async ({ context, page
   await expect(page.locator(".eqx-finding-row")).toHaveCount(0);
 });
 
-test("a missing selector stays visible as approximate and redesign reports why it cannot run", async ({ context, page }) => {
+test("a missing selector explains why redesign is unavailable before the user acts", async ({ context, page }, testInfo) => {
+  let redesignRequests = 0;
   await context.route(`${API_ORIGIN}/scan`, (route) => route.fulfill({
     json: { findings: [{ ...finding, selector: "#removed-target" }], summary: "One approximate finding" },
   }));
+  await context.route(`${API_ORIGIN}/redesign`, (route) => {
+    redesignRequests += 1;
+    return route.abort();
+  });
   await page.goto(DEMO_ORIGIN);
   await scanPage(page);
   const row = page.locator(".eqx-finding-row").filter({ hasText: finding.title });
   await expect(row).toContainText("Location approximate");
+  await expect(row).toContainText("No auto-redesign");
   await row.locator(".eqx-finding-summary").click();
-  await row.getByRole("button", { name: "Redesign this" }).click();
-  await expect(page.getByRole("alert")).toContainText("No redesignable page element could be located");
+  await expect(row.getByRole("note")).toContainText("Automatic redesign unavailable");
+  await expect(row.getByRole("note")).toContainText("matched page element is missing");
+  await expect(row.getByRole("button", { name: "Location unavailable" })).toBeDisabled();
+  await expect(page.getByText("0 of 1 open findings can be redesigned automatically")).toBeVisible();
+  await expect(page.getByRole("button", { name: "No automatic redesigns" })).toBeDisabled();
+  await page.screenshot({ path: testInfo.outputPath("redesign-unavailable.png"), animations: "disabled" });
+  expect(redesignRequests).toBe(0);
 });
 
 test("neutral selection stays neutral and Evidence reuses the completed analysis", async ({ context, page }) => {

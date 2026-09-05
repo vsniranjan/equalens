@@ -166,13 +166,27 @@ describe("Phase 7 redesign transaction coordinator", () => {
     expect(harness.notice()).toEqual({ mode: "payoff", scoreBefore: 64, scoreAfter: 82, accepted: 1, rejected: 1 });
   });
 
+  it("skips an oversized target while redesigning the available targets", async () => {
+    document.body.innerHTML = `<section id="large">${"Detailed specification ".repeat(900)}</section><section id="small">Original guidance</section>`;
+    const items = [finding("large", "#large"), finding("small", "#small")];
+    const requestRedesign = vi.fn().mockResolvedValue(response('<section id="small">Original guidance with broader support</section>'));
+    const { coordinator, harness } = setup(items, requestRedesign);
+
+    await coordinator.redesignFromPanel(items);
+
+    expect(requestRedesign).toHaveBeenCalledTimes(1);
+    expect(requestRedesign.mock.calls[0]?.[0].finding.id).toBe("small");
+    expect(harness.comparisons()).toHaveLength(1);
+    expect(harness.comparison()?.finding.id).toBe("small");
+  });
+
   it("surfaces missing-target errors from panel actions before a transaction starts", async () => {
     const item = finding("missing", "#removed-target");
     const requestRedesign = vi.fn();
     const { coordinator, harness } = setup([item], requestRedesign);
 
-    await expect(coordinator.redesignFromPanel([item])).rejects.toThrow("No redesignable page element could be located");
-    expect(harness.notice()).toMatchObject({ mode: "error", message: "No redesignable page element could be located." });
+    await expect(coordinator.redesignFromPanel([item])).rejects.toThrow("matched page element is missing");
+    expect(harness.notice()).toMatchObject({ mode: "error", message: expect.stringContaining("matched page element is missing") });
     expect(requestRedesign).not.toHaveBeenCalled();
     expect(coordinator.hasOpenPreview()).toBe(false);
   });
