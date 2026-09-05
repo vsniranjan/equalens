@@ -56,7 +56,7 @@ describe("content script runtime", () => {
     });
   });
 
-  it("runs the local scan from the buddy and clears stale findings on re-scan", async () => {
+  it("starts each AI scan with an empty result set", async () => {
     const actionEvent = vi.fn();
     window.addEventListener("equalens:action", actionEvent);
     controller = bootstrapContentScript(document);
@@ -68,10 +68,11 @@ describe("content script runtime", () => {
       .find((button) => button.textContent === "Scan page")!;
     await act(async () => firstScan.click());
 
-    expect(shadow.textContent).toContain("Single-body safety baseline");
-    expect(shadow.querySelector('[data-testid="inclusion-score"]')?.textContent).toBe("82");
+    expect(shadow.textContent).toContain("Deep scan in progress");
+    expect(shadow.querySelectorAll(".eqx-finding-row")).toHaveLength(0);
+    expect(shadow.querySelector('[data-testid="inclusion-score"]')?.textContent).toBe("100");
     expect(actionEvent).toHaveBeenLastCalledWith(expect.objectContaining({
-      detail: expect.objectContaining({ action: "scan", count: 1 }),
+      detail: expect.objectContaining({ action: "scan", count: 0 }),
     }));
 
     const close = shadow.querySelector<HTMLButtonElement>('[aria-label="Close findings panel"]')!;
@@ -84,7 +85,7 @@ describe("content script runtime", () => {
     await act(async () => secondScan.click());
 
     expect(shadow.textContent).not.toContain("Single-body safety baseline");
-    expect(shadow.textContent).toContain("No local findings");
+    expect(shadow.querySelectorAll(".eqx-finding-row")).toHaveLength(0);
     expect(shadow.querySelector('[data-testid="inclusion-score"]')?.textContent).toBe("100");
   });
 });

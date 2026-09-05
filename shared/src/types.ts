@@ -23,7 +23,7 @@ export interface Finding {
   severity: Severity;
   confidence: Confidence;
   evidenceTags: string[];
-  source: "heuristic" | "ai";
+  source: "ai";
   stereotype?: boolean;
   redesignable: boolean;
   fixed: boolean;

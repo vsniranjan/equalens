@@ -21,7 +21,7 @@ const safetyFinding: Finding = {
   severity: "safety-high",
   confidence: "high",
   evidenceTags: ["crash-dummy-body-range"],
-  source: "heuristic",
+  source: "ai",
   redesignable: true,
   fixed: false,
 };
@@ -37,7 +37,7 @@ const approximateFinding: Finding = {
   severity: "language",
   confidence: "high",
   evidenceTags: [],
-  source: "heuristic",
+  source: "ai",
   stereotype: true,
   redesignable: true,
   fixed: false,
@@ -99,7 +99,7 @@ describe("Phase 5 scan overlay", () => {
     expect(shadow.querySelector(".eqx-heatmap-rect")?.classList.contains("is-pulsing")).toBe(true);
 
     await act(async () => summary.click());
-    expect(shadow.textContent).toContain("Heuristic inference");
+    expect(shadow.textContent).toContain("AI inference");
     const markFixed = [...shadow.querySelectorAll<HTMLButtonElement>("button")]
       .find((button) => button.textContent === "Mark fixed")!;
     await act(async () => markFixed.click());

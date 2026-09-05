@@ -47,7 +47,7 @@ const aiFinding: Finding = {
   fixed: false,
 };
 
-describe("Phase 6 content scan pipeline", () => {
+describe("AI content scan pipeline", () => {
   let controller: ContentScriptController | null = null;
 
   beforeEach(() => {
@@ -84,7 +84,7 @@ describe("Phase 6 content scan pipeline", () => {
     vi.unstubAllGlobals();
   });
 
-  it("shows heuristics immediately and merges streamed AI findings by selector", async () => {
+  it("starts empty and renders streamed AI findings", async () => {
     let callbacks: ScanCallbacks | undefined;
     messaging.streamScan.mockImplementation((_request, nextCallbacks: ScanCallbacks) => {
       callbacks = nextCallbacks;
@@ -92,7 +92,8 @@ describe("Phase 6 content scan pipeline", () => {
     });
 
     const shadow = await startScan();
-    expect(shadow.textContent).toContain("Single-body safety baseline");
+    expect(shadow.querySelectorAll(".eqx-finding-row")).toHaveLength(0);
+    expect(shadow.textContent).toContain("AI is reviewing the visible page content");
     await vi.waitFor(() => expect(messaging.streamScan).toHaveBeenCalledOnce());
 
     await act(async () => callbacks!.onFinding(aiFinding));
@@ -122,7 +123,7 @@ describe("Phase 6 content scan pipeline", () => {
     expect(shadow.textContent).not.toContain("Deep scan paused");
   });
 
-  it("keeps local findings on an API error and retries without rescanning heuristics", async () => {
+  it("shows an AI error and retries from an empty result set", async () => {
     let retryCallbacks: ScanCallbacks | undefined;
     messaging.streamScan
       .mockImplementationOnce((_request, callbacks: ScanCallbacks) => {
@@ -136,7 +137,7 @@ describe("Phase 6 content scan pipeline", () => {
 
     const shadow = await startScan();
     await vi.waitFor(() => expect(shadow.textContent).toContain("Deep scan paused"));
-    expect(shadow.textContent).toContain("Single-body safety baseline");
+    expect(shadow.querySelectorAll(".eqx-finding-row")).toHaveLength(0);
 
     const retry = [...shadow.querySelectorAll<HTMLButtonElement>("button")]
       .find((button) => button.textContent === "Retry AI scan")!;
@@ -144,9 +145,10 @@ describe("Phase 6 content scan pipeline", () => {
     await vi.waitFor(() => expect(messaging.streamScan).toHaveBeenCalledTimes(2));
     expect(shadow.textContent).toContain("Deep scan in progress");
 
+    await act(async () => retryCallbacks!.onFinding(aiFinding));
     await act(async () => retryCallbacks!.onComplete());
     expect(shadow.textContent).toContain("Scan complete");
-    expect(shadow.textContent).toContain("Single-body safety baseline");
+    expect(shadow.textContent).toContain("AI-enriched safety baseline");
   });
 
   it("applies saved categories to scans and exports the current before/after scores", async () => {
@@ -155,7 +157,11 @@ describe("Phase 6 content scan pipeline", () => {
       categories: ["safety"],
       onboardingComplete: true,
     });
-    messaging.streamScan.mockImplementation(() => vi.fn());
+    let callbacks: ScanCallbacks | undefined;
+    messaging.streamScan.mockImplementation((_request, nextCallbacks: ScanCallbacks) => {
+      callbacks = nextCallbacks;
+      return vi.fn();
+    });
     messaging.requestApi.mockResolvedValue({
       id: "012345abcdef",
       url: "https://equalens-api.ragsetu-goa-2026.workers.dev/report/012345abcdef",
@@ -166,6 +172,8 @@ describe("Phase 6 content scan pipeline", () => {
       expect.objectContaining({ categories: ["safety"] }),
       expect.any(Object),
     ));
+    await act(async () => callbacks!.onFinding(aiFinding));
+    await act(async () => callbacks!.onComplete());
     expect(shadow.querySelector('[data-testid="buddy-orb"]')?.getAttribute("data-style")).toBe("minimal");
 
     const exportReport = [...shadow.querySelectorAll<HTMLButtonElement>("button")]

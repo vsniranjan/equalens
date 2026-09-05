@@ -311,6 +311,18 @@ describe("AI endpoints", () => {
 });
 
 describe("reports and rate limiting", () => {
+  it("rejects non-AI findings at the report boundary", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const response = await post("/report", {
+      ...reportPayload,
+      findings: [{ ...finding, source: "local" }],
+    });
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toEqual({ error: "AI response failed validation" });
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Invalid source"));
+  });
+
   it("stores a report and renders escaped shareable HTML", async () => {
     const createResponse = await post("/report", {
       ...reportPayload,

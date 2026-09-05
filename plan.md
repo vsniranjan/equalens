@@ -72,7 +72,7 @@ seatbelt geometry and control placement adapt → inclusion score rises live.
 - Exact frontend stack & build tooling for the extension.
 - Backend choice, LLM provider/model, caching design.
 - How Redesign technically rewrites the DOM safely (SPA re-renders, CSP).
-- Heatmap detection pipeline (heuristics vs LLM vs hybrid).
+- AI-only heatmap and findings pipeline.
 - Perspective Lens implementation (anthropometric data → visual effect).
 - Demo target sites: real sites vs self-hosted mock sites.
 - Inclusion score formula and display.

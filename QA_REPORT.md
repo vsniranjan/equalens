@@ -17,6 +17,7 @@ Tested September 5, 2026 against the locally built extension and Meridian mock s
 | Replacing one demo section left related findings unresolved and pointing at removed nodes. | Resolve related findings when the complete registered demo variant is kept. |
 | Demo variants removed headings referenced by section accessibility labels. | Restore the heading IDs. Browser tests check every section's label reference after keep. |
 | Redesign-all could interrupt an unfinished scan and miss later findings. | Disable the bulk action until the deep scan completes or returns an error. A held-response test verifies this behavior. |
+| Page scans mixed local rule-based findings with the AI report, producing results before AI analysis completed and retaining them after AI failures. | Remove the local detector and merge layer. Scans now begin empty, accept only `source: "ai"` findings, replace results from the one-shot fallback, and clear results before retry. Browser tests verify empty error states and successful recovery. |
 | The minimal companion's menu and explanation card overflowed narrow screens. | Clamp popover positions to the viewport for both companion styles. Browser tests cover 320 px. |
 | Mock-site reveal styling hid content until a scrolling observer fired. | Keep content visible by default, including snapshots and reduced-motion browsing. |
 | Form placeholders had weak contrast; a diagram label extended beyond its SVG. | Increase placeholder contrast and anchor the label inside the diagram. |
@@ -24,12 +25,12 @@ Tested September 5, 2026 against the locally built extension and Meridian mock s
 ## Validation
 
 - TypeScript: `npm run typecheck` passed.
-- Unit suites: shared 3, extension 71, API 20, mock site 5; all passed (99 total across the runs).
+- Unit suites: shared 3, extension 66, API 21, mock site 5; all passed (95 total across the runs).
 - Full browser suite: 28 passed, including onboarding/settings, selection analysis, offline and HTTP-error recovery, stale-scan cancellation, malformed results, strict CSP, frames, report retry/timeout, PDF printing, throttling, form submission, redesign rollback, and responsive layouts.
 - Live demo: selection analysis, deep scan, all four redesign requests, keep, and report export passed against the real API.
 - Local extension and mock-site production builds passed. The API dry-run build also completed; no deployment was performed.
 - Inspected browser screenshots of desktop scans/comparisons, responsive form previews, the kept form at 320 px, and narrow-screen selection cards.
-- Added 5 unit regressions and 6 browser regressions. Corrected an older test fixture that returned unchanged HTML while asserting a successful redesign.
+- AI-only scan regressions cover streamed findings, fallback responses, empty errors, retries, and strict rejection of non-AI result sources. Corrected an older test fixture that returned unchanged HTML while asserting a successful redesign.
 
 Browser artifacts are under `test-results/browser/`; live screenshots and request traces are under `test-results/live/`. Playwright regenerates these directories on subsequent runs.
 

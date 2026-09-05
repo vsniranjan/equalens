@@ -119,13 +119,13 @@ export function ScanOverlay({ document, findings, scanStatus, reportStatus, onCl
           {scanStatus.mode === "error" && <DeepScanError message={scanStatus.message} onRetry={onRetry} />}
           <ScoreSummary document={document} score={score} total={findings.length} open={activeFindings.length} />
           <div className="eqx-findings-list">
-            {findings.length === 0 ? (
+            {findings.length === 0 && scanStatus.mode === "complete" ? (
               <div className="eqx-findings-empty">
                 <span aria-hidden="true">✓</span>
-                <strong>No local findings</strong>
-                <p>This page passed the instant heuristic scan. Deep analysis can still inspect subtler assumptions.</p>
+                <strong>No AI findings</strong>
+                <p>The AI scan did not identify a significant gendered or body-default assumption on this page.</p>
               </div>
-            ) : CATEGORY_ORDER.map((category) => {
+            ) : findings.length > 0 ? CATEGORY_ORDER.map((category) => {
               const group = positioned.filter(({ finding }) => finding.category === category);
               if (group.length === 0) return null;
               return (
@@ -150,7 +150,7 @@ export function ScanOverlay({ document, findings, scanStatus, reportStatus, onCl
                   </div>
                 </section>
               );
-            })}
+            }) : null}
           </div>
         </div>
 
@@ -265,7 +265,7 @@ function DeepScanProgress() {
       <span className="eqx-deep-scan-mark" aria-hidden="true" />
       <span>
         <strong>Deep scan in progress</strong>
-        <small>Heuristic findings remain active while AI reviews the page.</small>
+        <small>AI is reviewing the visible page content.</small>
       </span>
       <span className="eqx-deep-scan-bars" aria-hidden="true"><i /><i /><i /></span>
     </div>
@@ -278,7 +278,7 @@ function DeepScanError({ message, onRetry }: { message: string; onRetry: () => v
     <div className="eqx-deep-scan-error" role="alert">
       <span>
         <strong>Deep scan paused</strong>
-        <small>{sentence} Instant findings and the current score are still available.</small>
+        <small>{sentence} Retry to run the AI scan again.</small>
       </span>
       <button type="button" onClick={onRetry}>Retry AI scan</button>
     </div>
@@ -367,7 +367,7 @@ function categoryDescriptor(category: Category): string {
 function scanStatusLabel(status: DeepScanStatus): string {
   if (status.mode === "scanning") return "Deep scan";
   if (status.mode === "complete") return "Scan complete";
-  if (status.mode === "error") return "Local results";
+  if (status.mode === "error") return "Scan paused";
   return "Scan ready";
 }
 

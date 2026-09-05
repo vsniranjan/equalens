@@ -141,40 +141,22 @@ Compact card next to the selection, four buttons:
 All responses stream state through a simple `loading → success | error`
 machine; errors show a retry button, never a blank card.
 
-### 2.6 Page Scan — hybrid pipeline
+### 2.6 Page Scan — AI report
 
 Trigger: buddy menu → Scan page.
 
-**Phase 1 — instant heuristics (local, <50 ms):**
-Deterministic rules run over the DOM and light up the heatmap immediately:
-
-| Rule | Category | Example trigger |
-|---|---|---|
-| Exclusionary sizing copy | usability (orange) | "one-size-fits-all", "unisex" without size range, "standard fit" |
-| Binary/limited forms | language (blue) | `<select>` with only Mr/Mrs, M/F radio without alternatives |
-| Male-default language | language (blue) | "he/his" as generic user, "manpower", "chairman" |
-| Safety-spec keywords | safety (red) | "50th percentile", "standard crash test", "average male", restraint/harness specs w/o size range |
-| Missing accessibility affordances | usability (orange) | click targets < 24px, form inputs without labels |
-| Paternalistic / stereotype design | language (blue), `stereotype: true` | "simplified for women", "female-friendly" (meaning fewer options), "ladies' edition/version", "easy enough for mom" |
-
-The paternalistic rule is EquaLens's own anti-stereotype defense: it flags
-designs that *claim* to help women by reducing capability. Such findings
-render with a distinct **"Stereotype"** chip and their Explain card states the
-principle: the fix is never fewer features — it's removing the unsupported
-gender assumption. The LLM scan prompt carries the same instruction, so
-`source: "ai"` findings can set `stereotype: true` too.
-
-Each heuristic emits a `Finding` with `source: "heuristic"`, a selector, and a
-fixed severity.
-
-**Phase 2 — LLM deep scan (streamed):**
 Content script serializes visible DOM: walks elements in viewport order,
 extracts `{selector, tag, role, text (truncated), key attributes}` up to ~15 KB
 of JSON. Background worker sends to `POST /scan`. Worker calls Gemini with a
 structured-output schema; findings stream back (Worker uses Gemini streaming;
-extension receives chunked JSON lines) and upgrade the heatmap live —
-heuristic hits may be enriched (merged by selector), new hotspots appear.
-`source: "ai"`.
+extension receives chunked JSON lines) and populate the heatmap and findings
+panel. The panel starts empty and only displays findings from this AI report.
+Every finding has `source: "ai"`.
+
+The prompt explicitly flags paternalistic designs that claim to help women by
+reducing capability. These findings use `stereotype: true`, render with a
+distinct **"Stereotype"** chip, and state that remediation removes the
+unsupported gender assumption without reducing features.
 
 **Heatmap rendering:** page dims via a shadow-DOM full-viewport overlay at
 55 % black; for each finding, a positioned glow rect (red/orange/blue,
@@ -312,7 +294,7 @@ interface Finding {
   severity: Severity;
   confidence: "high" | "medium" | "low";
   evidenceTags: string[];        // keys into citation library
-  source: "heuristic" | "ai";
+  source: "ai";
   stereotype?: boolean;          // paternalistic/stereotype design (§2.6) — renders a "Stereotype" chip
   redesignable: boolean;
   fixed: boolean;                // client-side state
@@ -391,11 +373,11 @@ manufacturer product page — it must NOT look like a strawman.
    standard reach distance (men's 50th percentile arm reach)".
 4. **Interior comfort**: fixed seatbelt anchor height, non-adjustable lumbar,
    "one-size steering grip".
-5. Configurator form: title dropdown (Mr/Mrs only) — heuristic bait.
+5. Configurator form: title dropdown (Mr/Mrs only) — planted scan case.
 6. Footer with fake press quotes.
 
-Every scripted demo beat is planted content that heuristics + LLM genuinely
-detect — the *analysis* is real; only the Path-B redesign pixels are pre-built.
+Every scripted demo beat is planted content that the AI scan genuinely
+detects — the *analysis* is real; only the Path-B redesign pixels are pre-built.
 
 ### 4.2 Pre-built inclusive variants (Path B registry)
 
@@ -415,13 +397,13 @@ detect — the *analysis* is real; only the Path-B redesign pixels are pre-built
    assumption card: designed around 50th-percentile male body (evidence:
    crash-test citation, ~real "women 47 % more likely to be seriously
    injured" stat from curated library).
-3. **Scan page** → dim + heatmap blooms (instant heuristic hits, AI findings
-   stream in) → panel opens, Inclusion Score: e.g. **41**.
+3. **Scan page** → AI reviews the page, then the dimmer and heatmap bloom as
+   findings stream in → panel opens, Inclusion Score: e.g. **41**.
 4. **Redesign all** → seat diagram morphs, specs rewrite with typewriter,
    form fixes → before/after slider on the hero finding → score counts up to
    e.g. **86**, ring turns green.
-5. Switch tab to real car-manufacturer page → **Scan** → heuristic +
-   AI findings appear on a site we don't control ("works anywhere").
+5. Switch tab to real car-manufacturer page → **Scan** → AI findings appear
+   on a site we don't control ("works anywhere").
 6. **Export report** → open the shareable report URL — the designer story.
 
 ### 4.4 Curated citation library
@@ -440,7 +422,7 @@ full citation. This is what makes "evidence vs inference" honest.
 
 | Case | Behavior |
 |---|---|
-| Gemini error/timeout (25 s) | Popup/panel shows friendly error + Retry; heuristic findings and score remain usable. KV cache prevents this on rehearsed content. |
+| Gemini error/timeout | Panel shows a friendly error with Retry and no scan findings. KV cache prevents this on rehearsed content. |
 | Selector not found (SPA re-render, dynamic DOM) | Finding shown panel-only with "location approximate"; no crash. |
 | SPA wipes our redesigned DOM | Session-scoped only; we keep node refs and re-apply is NOT attempted (out of scope) — demo sites don't re-render. Documented limitation. |
 | Page with CSP blocking injected styles | We use constructed stylesheets in shadow DOM — unaffected by page CSP. Worker API calls go via background worker — unaffected by page CSP. |
@@ -457,8 +439,8 @@ full citation. This is what makes "evidence vs inference" honest.
 |---|---|---|
 | 1. Scaffold monorepo, CRXJS extension shell, shadow-DOM mount, Worker + wrangler deploy, mock-site skeleton | 4 | Extension loads, orb renders, API hello-world deployed |
 | 2. Selection capture + popup + `/analyze` (Gemini structured output) + Explain card + citation library | 5 | Wow-adjacent: real explain on selection |
-| 3. Heuristic scan + heatmap overlay + panel + score | 5 | Scan moment works offline |
-| 4. `/scan` LLM pipeline (serialize, stream, merge) | 4 | Full hybrid scan |
+| 3. Scan heatmap overlay + panel + score | 5 | AI report has a clear visual presentation |
+| 4. `/scan` AI pipeline (serialize and stream) | 4 | Full AI-only scan |
 | 5. Redesign Path A (LLM + DOMPurify + typewriter) + before/after slider + score animation | 4 | Killer moment, generic |
 | 6. Meridian Motors full content + Path B variants (SVG morphs) | 4 | Killer moment, climax |
 | 7. Onboarding + report export + KV caching + rate limit | 2 | Secondary features |

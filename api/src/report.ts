@@ -74,7 +74,7 @@ export function renderReport(payload: ReportPayload, nonce: string): string {
       </section>
       <section class="evidence-section" aria-labelledby="evidence-heading"><h2 id="evidence-heading">Evidence &amp; sources</h2>${evidence}</section>
       <aside class="governance">
-        <div><strong>Evidence standard</strong><span>Verified sources are listed separately from model or heuristic inference. Recommendations require human review before production use.</span></div>
+        <div><strong>Evidence standard</strong><span>Verified sources are listed separately from AI inference. Recommendations require human review before production use.</span></div>
         <div><strong>Privacy boundary</strong><span>This report contains page metadata and findings only. EquaLens never asks for or stores personal, gender, or medical information.</span></div>
       </aside>
     </div>
@@ -91,7 +91,7 @@ function renderFindingRow(finding: Finding): string {
   const status = finding.fixed ? "Fixed" : "Open";
   return `<tr>
     <td data-label="Severity"><span class="severity" data-category="${finding.category}">${escapeHtml(category)}</span></td>
-    <td data-label="Finding">${escapeHtml(finding.title)}<small class="finding-origin">${finding.source === "ai" ? "AI" : "Heuristic"} inference · ${escapeHtml(finding.confidence)} confidence${finding.stereotype ? " · stereotype" : ""}</small></td>
+    <td data-label="Finding">${escapeHtml(finding.title)}<small class="finding-origin">AI inference · ${escapeHtml(finding.confidence)} confidence${finding.stereotype ? " · stereotype" : ""}</small></td>
     <td data-label="Hidden assumption">${escapeHtml(finding.assumption)}</td>
     <td data-label="Recommendation">${escapeHtml(recommendationFor(finding))}</td>
     <td data-label="Status"><span class="finding-status" data-fixed="${String(finding.fixed)}">${status}</span></td>

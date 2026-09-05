@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { calculateInclusionScore } from "@equalens/shared/tokens";
 import type { Finding } from "@equalens/shared/types";
 import { renderReport } from "../api/src/report";
 import { test, expect, API_ORIGIN, DEMO_ORIGIN, dismissOnboarding, selectRestraint, scanPage } from "./fixtures";
@@ -10,8 +11,15 @@ const finding: Finding = {
   evidenceTags: [], source: "ai", redesignable: true, fixed: false,
 };
 
+const demoFindings: Finding[] = [
+  { ...finding, id: "seat", selector: "#seat-system .spec-list", title: "Single-body safety baseline", category: "safety", severity: "safety-high" },
+  { ...finding, id: "reach", selector: "#controls .reach-claim", title: "Single reach baseline" },
+  { ...finding, id: "seat-fit", selector: "#interior .feature-card:nth-child(2) h3", title: "One-size design assumption" },
+  { ...finding, id: "title", selector: "#configure select", title: "Restricted title options", category: "language", severity: "language" },
+];
+
 test("redesign preview can be reverted, kept, and submitted without losing existing form values", async ({ context, page }) => {
-  await context.route(`${API_ORIGIN}/scan`, (route) => route.fulfill({ json: { findings: [], summary: "Done" } }));
+  await context.route(`${API_ORIGIN}/scan`, (route) => route.fulfill({ json: { findings: demoFindings, summary: "Done" } }));
   await context.route(`${API_ORIGIN}/redesign`, (route) => route.fulfill({ json: {
     rewritten_html: route.request().postDataJSON().outerHTML.replace("One-size-fits-all sport seats", "Adjustable sport seats for a broad range of body dimensions"), rationale: "Preserve all existing capabilities and expand fit.", changes: ["Expanded fit"],
   } }));
@@ -22,7 +30,8 @@ test("redesign preview can be reverted, kept, and submitted without losing exist
   const original = await page.locator("[data-equalens-variant]").evaluateAll((elements) => elements.map((element) => element.innerHTML.replaceAll("reveal is-visible", "reveal")));
   await scanPage(page);
   await expect(page.locator(".eqx-panel-status")).toHaveText("Scan complete");
-  const score = await page.getByTestId("inclusion-score").textContent();
+  const score = String(calculateInclusionScore(demoFindings.map(({ severity }) => severity)));
+  await expect(page.getByTestId("inclusion-score")).toHaveText(score);
   await page.getByRole("button", { name: "Redesign all", exact: true }).click();
   await expect(page.getByRole("button", { name: "Keep change", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Before", exact: true }).click();
@@ -47,7 +56,7 @@ test("redesign preview can be reverted, kept, and submitted without losing exist
 });
 
 test("a failure halfway through redesign-all rolls back every earlier DOM change", async ({ context, page }) => {
-  await context.route(`${API_ORIGIN}/scan`, (route) => route.fulfill({ json: { findings: [], summary: "Done" } }));
+  await context.route(`${API_ORIGIN}/scan`, (route) => route.fulfill({ json: { findings: demoFindings, summary: "Done" } }));
   let requests = 0;
   await context.route(`${API_ORIGIN}/redesign`, (route) => {
     requests += 1;
@@ -114,7 +123,7 @@ test.beforeEach(async ({ context, worker }) => {
 });
 
 for (const status of [401, 429, 502, 504]) {
-  test(`scan preserves heuristics after HTTP ${status} and recovers on retry`, async ({ context, page }) => {
+  test(`scan reports HTTP ${status} and recovers on retry`, async ({ context, page }) => {
     let fail = true;
     await context.route(`${API_ORIGIN}/scan`, (route) => route.fulfill({
       status: fail ? status : 200,
@@ -124,16 +133,16 @@ for (const status of [401, 429, 502, 504]) {
     await page.goto(DEMO_ORIGIN);
     await scanPage(page);
     await expect(page.getByText("Deep scan paused", { exact: true })).toBeVisible();
-    await expect(page.locator(".eqx-finding-row")).not.toHaveCount(0);
-    const before = await page.getByTestId("inclusion-score").textContent();
+    await expect(page.locator(".eqx-finding-row")).toHaveCount(0);
+    await expect(page.getByTestId("inclusion-score")).toHaveText("100");
     fail = false;
     await page.getByRole("button", { name: "Retry AI scan" }).click();
     await expect(page.locator(".eqx-panel-status")).toHaveText("Scan complete");
-    await expect(page.getByTestId("inclusion-score")).toHaveText(before!);
+    await expect(page.getByText("No AI findings", { exact: true })).toBeVisible();
   });
 }
 
-test("offline selection shows retry, while offline scan retains local findings", async ({ context, page }) => {
+test("offline selection and scan both show retry states", async ({ context, page }) => {
   await context.route(`${API_ORIGIN}/**`, (route) => route.abort("internetdisconnected"));
   await page.goto(DEMO_ORIGIN);
   await selectRestraint(page);
@@ -142,7 +151,7 @@ test("offline selection shows retry, while offline scan retains local findings",
   await expect(page.getByRole("button", { name: "Try again", exact: true })).toBeEnabled();
   await scanPage(page);
   await expect(page.getByText("Deep scan paused", { exact: true })).toBeVisible();
-  await expect(page.locator(".eqx-finding-row")).not.toHaveCount(0);
+  await expect(page.locator(".eqx-finding-row")).toHaveCount(0);
 });
 
 test("a missing selector stays visible as approximate and redesign reports why it cannot run", async ({ context, page }) => {
@@ -174,7 +183,7 @@ test("neutral selection stays neutral and Evidence reuses the completed analysis
 });
 
 test("export failure retains results and permits a successful retry", async ({ context, page }) => {
-  await context.route(`${API_ORIGIN}/scan`, (route) => route.fulfill({ json: { findings: [], summary: "Done" } }));
+  await context.route(`${API_ORIGIN}/scan`, (route) => route.fulfill({ json: { findings: [finding], summary: "Done" } }));
   let fail = true;
   await context.route(`${API_ORIGIN}/report`, (route) => route.fulfill({
     status: fail ? 503 : 201,
@@ -217,7 +226,7 @@ test("a second scan cancels stale results from the first scan", async ({ context
   await expect(page.locator(".eqx-finding-row").filter({ hasText: "Stale scan result" })).toHaveCount(0);
 });
 
-test("network loss during a scan keeps local results and supports recovery", async ({ context, page }) => {
+test("network loss during a scan shows an empty error state and supports recovery", async ({ context, page }) => {
   let held: import("@playwright/test").Route | undefined;
   let offline = false;
   let resumed = false;
@@ -233,7 +242,7 @@ test("network loss during a scan keeps local results and supports recovery", asy
   await context.setOffline(true);
   await held!.abort("internetdisconnected");
   await expect(page.getByText("Deep scan paused", { exact: true })).toBeVisible();
-  await expect(page.locator(".eqx-finding-row")).not.toHaveCount(0);
+  await expect(page.locator(".eqx-finding-row")).toHaveCount(0);
   offline = false;
   resumed = true;
   await context.setOffline(false);
@@ -248,12 +257,12 @@ test("malformed scan findings cannot crash the overlay", async ({ context, page 
   await page.goto(DEMO_ORIGIN);
   await scanPage(page);
   await expect(page.getByText("Deep scan paused", { exact: true })).toBeVisible();
-  await expect(page.locator(".eqx-finding-row")).not.toHaveCount(0);
+  await expect(page.locator(".eqx-finding-row")).toHaveCount(0);
   await expect(page.getByTestId("buddy-orb")).toBeVisible();
 });
 
 test("a hung report request times out and unlocks export", async ({ context, page }) => {
-  await context.route(`${API_ORIGIN}/scan`, (route) => route.fulfill({ json: { findings: [], summary: "Done" } }));
+  await context.route(`${API_ORIGIN}/scan`, (route) => route.fulfill({ json: { findings: [finding], summary: "Done" } }));
   await context.route(`${API_ORIGIN}/report`, () => undefined);
   await page.goto(DEMO_ORIGIN);
   await scanPage(page);

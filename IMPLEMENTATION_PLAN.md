@@ -36,8 +36,8 @@ Plus `shared/` — TS types + design tokens + curated citation library.
 - Demo strategy: **hybrid** — scripted wow-moments on the mock site + live
   scan on a real car-manufacturer site to prove generality.
 - Backend: Cloudflare Worker + **Gemini** (not Claude/OpenAI).
-- Scan: **hybrid pipeline** — instant local heuristics, then streamed LLM
-  findings (spec §2.6).
+- Scan: **AI-only pipeline** — streamed model findings populate the panel and
+  heatmap (spec §2.6).
 - Redesign: **hybrid mechanics** — real LLM HTML rewrites anywhere (Path A) +
   pre-built inclusive variants on the mock site (Path B) (spec §2.8).
 - Buddy: **docked orb that awakens on selection** — NOT a cursor follower.
@@ -70,7 +70,7 @@ Plus `shared/` — TS types + design tokens + curated citation library.
   would cost time and buy nothing.
 - **Commit at the end of every phase with a working build** (also a §3
   invariant). Message format: `Phase N: <what shipped>`, e.g.
-  `Phase 5: heuristic scan, heatmap, findings panel, score`. **Push after
+  `Phase 5: scan heatmap, findings panel, score`. **Push after
   every phase commit** — the remote is the only backup; a dead laptop with
   hours of unpushed work ends the project.
 - **Tag the demo.** When the full 60-second choreography (spec §4.3) runs
@@ -94,7 +94,7 @@ Plus `shared/` — TS types + design tokens + curated citation library.
   on disk before judging.
 
 **Verbatim "bias bait" strings** — these exact strings appear in the mock
-site content AND are matched by scan heuristics AND appear in the design
+site content AND are included in the AI scan prompt AND appear in the design
 mockups. Never paraphrase them; they keep design/demo/code in sync:
 - "Certified against the 50th-percentile adult male crash test dummy (175 cm / 78 kg)"
 - "based on 50th percentile male arm reach"
@@ -339,21 +339,14 @@ found" state (make sure the prompt/schema allows a null finding).
 
 ---
 
-### Phase 5 — Scan: heuristics, heatmap, findings panel, score (~4h)
+### Phase 5 — Scan presentation: heatmap, findings panel, score (~4h)
 
-**Goal:** The Scan wow-moment, working fully offline. (Spec §2.6 phase 1, §2.7)
+**Goal:** Build the visual presentation for AI scan results. (Spec §2.6, §2.7)
 
 Tasks:
-1. Heuristic engine (spec §2.6 table): pure functions over the DOM emitting
-   `Finding`s with `source: "heuristic"` — exclusionary sizing copy
-   ("one-size-fits-all", "unisex" w/o size range, "standard fit"),
-   binary/limited forms (Mr/Mrs-only selects, M/F radios), male-default
-   language ("he/his" generic, "manpower", "chairman"), safety-spec keywords
-   ("50th percentile", "average male", "standard crash test"), accessibility
-   (click targets <24px, unlabeled inputs), **paternalistic/stereotype
-   design** ("simplified for women", "female-friendly" meaning fewer
-   options, "ladies' edition") → `stereotype: true`, rendered with a
-   distinct "Stereotype" chip (spec §2.6). Deterministic severities.
+1. Define AI `Finding` fixtures for exclusionary sizing, limited forms,
+   male-default language, safety baselines, accessibility, and paternalistic
+   design. Use these fixtures to develop and test the scan UI.
 2. Heatmap overlay (spec §2.6): 55% black dimmer + positioned glow rects
    (severity color, from `getBoundingClientRect`), rAF-throttled reposition
    on scroll/resize. **Selector-miss fallback:** finding without resolvable
@@ -367,32 +360,29 @@ Tasks:
    ring color bands <50 red / 50–79 amber / ≥80 green; ~800ms ease-out
    count-up on change. "Mark fixed" must already move the score.
 
-**Verify:** Scan the mock site with the network disabled — heuristics alone
-produce ≥4 findings, heatmap anchors correctly, score computes (expect ~41
-per the demo script), marking fixed animates the score up. Re-scan clears
-and re-runs (spec §5).
+**Verify:** Render ≥4 AI finding fixtures against the mock site, confirm the
+heatmap anchors correctly and score computes, and confirm marking fixed
+animates the score up.
 
 ---
 
-### Phase 6 — LLM deep scan with streaming merge (~3h)
+### Phase 6 — AI scan with streaming results (~3h)
 
-**Goal:** Scan feels fast AND smart. (Spec §2.6 phase 2)
+**Goal:** Populate the scan exclusively from the AI report. (Spec §2.6)
 
 Tasks:
 1. DOM serializer: viewport-order walk emitting
    `{selector, tag, role, text (truncated), key attrs}` capped at 15 KB JSON
    (spec §2.6, §5 long-page row).
 2. Wire `POST /scan` through the background-worker streaming relay; parse
-   NDJSON `Finding`s as they arrive; merge by selector (AI enriches
-   heuristic hits, new hotspots fade in live); score recomputes per arrival.
+   NDJSON `Finding`s as they arrive; append new hotspots live and recompute
+   the score per arrival.
 3. Fallback: if streaming is flaky, single-response mode (Phase 2 already
-   supports it) — a spinner on the panel is acceptable; dead heatmap is not
-   (heuristics already lit it in Phase 5).
+   supports it) and replace the result set with the completed AI report.
 
-**Verify:** Mock site scan: heuristic hits <50ms, AI findings stream in
-after; real car-manufacturer site scan produces sensible findings on markup
-we don't control; Gemini failure (kill network after heuristic pass) leaves
-a usable heuristic-only panel + error toast with retry (spec §5).
+**Verify:** Mock-site and real-site scans produce sensible AI findings on
+markup we don't control. A Gemini failure leaves an empty result set with a
+clear error and retry action (spec §5).
 
 ---
 
@@ -477,8 +467,8 @@ Tasks:
    1–6) against production twice; confirm `cached: true` on the second pass.
 2. Rehearse the real-site half on the chosen car-manufacturer page; fix
    selector anchoring issues; confirm the selector-miss fallback path renders.
-3. Failure drills per spec §5: kill network mid-scan (heuristics survive),
-   Gemini 25s timeout (error + retry UI), double-scan, iframe selection
+3. Failure drills per spec §5: kill network mid-scan (empty error state),
+   Gemini timeout (error + retry UI), double-scan, iframe selection
    message, chrome:// no-op.
 4. Polish pass: orb glide, heatmap bloom stagger, score count-up, typewriter
    pacing — motion is the wow multiplier, but only after everything works.

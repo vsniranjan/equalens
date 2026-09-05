@@ -151,7 +151,7 @@ function modelStringArray(value: unknown, field: string): string[] {
   return value;
 }
 
-function parseFinding(value: unknown, allowedSelectors?: ReadonlySet<string>, aiOnly = true): Finding {
+function parseFinding(value: unknown, allowedSelectors?: ReadonlySet<string>, requireUnfixed = true): Finding {
   if (!isRecord(value)) throw new AIValidationError("Finding must be an object");
   if (value.selector !== null && typeof value.selector !== "string") throw new AIValidationError("Invalid selector");
   if (typeof value.selector === "string" && allowedSelectors && !allowedSelectors.has(value.selector)) {
@@ -160,9 +160,9 @@ function parseFinding(value: unknown, allowedSelectors?: ReadonlySet<string>, ai
   if (typeof value.category !== "string" || !CATEGORIES.has(value.category as Category)) throw new AIValidationError("Invalid category");
   if (typeof value.severity !== "string" || !SEVERITIES.has(value.severity as Severity)) throw new AIValidationError("Invalid severity");
   if (typeof value.confidence !== "string" || !CONFIDENCE.has(value.confidence as Confidence)) throw new AIValidationError("Invalid confidence");
-  if (value.source !== "ai" && (aiOnly || value.source !== "heuristic")) throw new AIValidationError("Invalid source");
+  if (value.source !== "ai") throw new AIValidationError("Invalid source");
   if (typeof value.redesignable !== "boolean" || typeof value.fixed !== "boolean") throw new AIValidationError("Invalid finding state");
-  if (aiOnly && value.fixed !== false) throw new AIValidationError("AI findings must begin unfixed");
+  if (requireUnfixed && value.fixed !== false) throw new AIValidationError("AI findings must begin unfixed");
   if (value.stereotype !== undefined && value.stereotype !== null && typeof value.stereotype !== "boolean") {
     throw new AIValidationError("Invalid stereotype flag");
   }

@@ -2,10 +2,8 @@ import { calculateInclusionScore } from "@equalens/shared/tokens";
 import type { AnalyzeRequest, AnalyzeResponse, Finding, InterestCategory, RedesignResponse, ReportPayload, ReportResponse, ScanRequest, ScanResponse } from "@equalens/shared/types";
 import { serializeVisibleDom } from "./content/dom-serializer";
 import { ElementPicker, type ElementCapture } from "./content/element-picker";
-import { runHeuristicScan } from "./content/heuristics";
 import { mountOverlay, type OrbAction, type OverlayController } from "./content/overlay";
 import { RedesignCoordinator } from "./content/redesign-coordinator";
-import { mergeScanFinding, mergeScanFindings } from "./content/scan-merge";
 import type { ScanPanelAction } from "./content/scan-overlay";
 import { captureTextSelection, toViewportRect } from "./content/selection";
 import { requestApi, streamScan } from "./messaging";
@@ -158,7 +156,7 @@ export function bootstrapContentScript(document: Document = window.document): Co
 
   function startPageScan(): void {
     cancelDeepScan();
-    scanFindings = runHeuristicScan(document);
+    scanFindings = [];
     overlay.showScan(scanFindings);
     dispatchAction("scan", { count: scanFindings.length, findings: scanFindings });
     beginDeepScan();
@@ -166,6 +164,8 @@ export function bootstrapContentScript(document: Document = window.document): Co
 
   function retryDeepScan(): void {
     cancelDeepScan();
+    scanFindings = [];
+    overlay.setFindings(scanFindings);
     beginDeepScan();
   }
 
@@ -191,7 +191,7 @@ export function bootstrapContentScript(document: Document = window.document): Co
           const stop = streamScan(request, {
             onFinding(finding) {
               if (destroyed || generation !== scanGeneration) return;
-              scanFindings = mergeScanFinding(scanFindings, finding);
+              scanFindings = [...scanFindings, { ...finding }];
               overlay.setFindings(scanFindings);
             },
             onComplete() {
@@ -248,7 +248,7 @@ export function bootstrapContentScript(document: Document = window.document): Co
       const response = await requestApi<ScanResponse>("/scan", request);
       if (destroyed || generation !== scanGeneration) return;
       if (!response || !Array.isArray(response.findings)) throw new Error("EquaLens received an invalid scan response");
-      scanFindings = mergeScanFindings(scanFindings, response.findings);
+      scanFindings = response.findings.map((finding) => ({ ...finding }));
       overlay.setFindings(scanFindings);
       overlay.setScanStatus({ mode: "complete" });
     } catch (fallbackError) {

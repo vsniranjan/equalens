@@ -256,7 +256,7 @@ function EvidenceRows({ finding, citations }: { finding: Finding; citations: Ret
       ))}
       <div className="eqx-inference-row">
         <span>{finding.impact}</span>
-        <small><b aria-hidden="true">◇</b> {finding.source === "ai" ? "AI" : "Heuristic"} inference</small>
+        <small><b aria-hidden="true">◇</b> AI inference</small>
       </div>
     </div>
   );

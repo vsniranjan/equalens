@@ -171,7 +171,7 @@ function isFinding(value: unknown): value is Finding {
     && typeof value.category === "string" && ["safety", "usability", "language"].includes(value.category)
     && typeof value.severity === "string" && ["safety-high", "safety-med", "usability-high", "usability-med", "language"].includes(value.severity)
     && typeof value.confidence === "string" && ["high", "medium", "low"].includes(value.confidence)
-    && (value.source === "ai" || value.source === "heuristic")
+    && value.source === "ai"
     && typeof value.fixed === "boolean" && typeof value.redesignable === "boolean"
     && (value.stereotype === undefined || typeof value.stereotype === "boolean")
     && stringArray(value.affected) && stringArray(value.evidenceTags);

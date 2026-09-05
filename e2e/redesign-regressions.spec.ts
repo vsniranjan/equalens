@@ -2,6 +2,20 @@ import { resolve } from "node:path";
 import type { Finding } from "@equalens/shared/types";
 import { test, expect, API_ORIGIN, DEMO_ORIGIN, dismissOnboarding, scanPage, selectRestraint } from "./fixtures";
 
+const baseFinding: Finding = {
+  id: "demo", selector: "#seat-system .spec-list", title: "Single-body safety baseline",
+  assumption: "One body represents every occupant.", impact: "Other occupants may be excluded.",
+  affected: ["people outside the reference range"], category: "safety", severity: "safety-high", confidence: "high",
+  evidenceTags: [], source: "ai", redesignable: true, fixed: false,
+};
+
+const demoFindings: Finding[] = [
+  baseFinding,
+  { ...baseFinding, id: "reach", selector: "#controls .reach-claim", title: "Single reach baseline", category: "usability", severity: "usability-high" },
+  { ...baseFinding, id: "seat-fit", selector: "#interior .feature-card:nth-child(2) h3", title: "One-size design assumption", category: "usability", severity: "usability-high" },
+  { ...baseFinding, id: "title", selector: "#configure select", title: "Restricted title options", category: "language", severity: "language" },
+];
+
 test.beforeEach(async ({ context, worker }) => {
   await dismissOnboarding(context, worker);
   await context.route(`${DEMO_ORIGIN}/**`, async (route) => {
@@ -41,11 +55,12 @@ test("redesign-all waits for the complete scan instead of dropping pending findi
   await scanPage(page);
   await expect.poll(() => Boolean(held)).toBe(true);
   await expect(page.getByRole("button", { name: "Redesign all", exact: true })).toBeDisabled();
-  await held!.fulfill({ json: { findings: [], summary: "Done" } });
+  await held!.fulfill({ json: { findings: [baseFinding], summary: "Done" } });
   await expect(page.getByRole("button", { name: "Redesign all", exact: true })).toBeEnabled();
 });
 
 test("redesign-all changes every flagged area and compares every changed section", async ({ context, page }, testInfo) => {
+  await context.route(`${API_ORIGIN}/scan`, (route) => route.fulfill({ json: { findings: demoFindings, summary: "Done" } }));
   await context.route(`${API_ORIGIN}/redesign`, (route) => route.fulfill({ json: {
     rewritten_html: route.request().postDataJSON().outerHTML.replace("One-size-fits-all sport seats", "Adjustable sport seats for a broad range of body dimensions"),
     rationale: "Expand fit while preserving the original specifications.", changes: ["Expanded fit"],
@@ -115,6 +130,7 @@ test("a button redesign applies accessibility attributes while retaining its cli
 });
 
 test("an unchanged AI response cannot be kept as a successful fix", async ({ context, page }) => {
+  await context.route(`${API_ORIGIN}/scan`, (route) => route.fulfill({ json: { findings: [demoFindings[2]], summary: "Done" } }));
   await context.route(`${API_ORIGIN}/redesign`, (route) => route.fulfill({ json: {
     rewritten_html: route.request().postDataJSON().outerHTML,
     rationale: "Expanded fit.", changes: ["Expanded fit"],
