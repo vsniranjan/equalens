@@ -57,6 +57,19 @@ test("redesign-all waits for the complete scan instead of dropping pending findi
   await expect(page.locator(".eqx-panel-status")).toHaveText("AI scanning");
   await expect(page.getByTestId("inclusion-score")).toHaveText("—");
   await expect(page.locator(".eqx-deep-scan-progress")).toContainText("AI scan in progress");
+  const loaderAnimation = await page.locator(".eqx-deep-scan-progress").evaluate((element) => {
+    const style = getComputedStyle(element, "::after");
+    return {
+      iterationCount: style.animationIterationCount,
+      name: style.animationName,
+      timingFunction: style.animationTimingFunction,
+    };
+  });
+  expect(loaderAnimation).toEqual({
+    iterationCount: "infinite",
+    name: "eqx-scan-loop",
+    timingFunction: "linear",
+  });
   await page.screenshot({ path: testInfo.outputPath("ai-scan-pending.png"), animations: "disabled" });
   await expect(page.getByRole("button", { name: "Redesign all", exact: true })).toBeDisabled();
   await held!.fulfill({ json: { findings: [baseFinding], summary: "Done" } });

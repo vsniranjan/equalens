@@ -563,15 +563,13 @@ button { font: inherit; }
 }
 .eqx-deep-scan-progress::after {
   position: absolute;
-  right: 0;
   bottom: 0;
-  left: 0;
+  left: -32%;
+  width: 32%;
   height: 3px;
-  background: #70d0d5;
+  background: linear-gradient(90deg, transparent, #8ce0e4 28%, #8ce0e4 72%, transparent);
   content: "";
-  transform: scaleX(0.18);
-  transform-origin: left;
-  animation: eqx-scan-sweep 1.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation: eqx-scan-loop 1.25s linear infinite;
 }
 .eqx-deep-scan-progress > span:nth-child(2), .eqx-deep-scan-error > span { display: grid; gap: 1px; }
 .eqx-deep-scan-progress strong, .eqx-deep-scan-error strong { color: var(--eqx-ink); font-size: 11px; font-weight: 750; }
@@ -757,7 +755,7 @@ button { font: inherit; }
 @keyframes eqx-heat-pulse { 0%, 100% { filter: brightness(1); } 45% { filter: brightness(1.45); box-shadow: 0 0 28px var(--eqx-heat-color); } }
 @keyframes eqx-deep-scan-pulse { from { opacity: 0.48; transform: scale(0.88); } to { opacity: 1; transform: scale(1); } }
 @keyframes eqx-deep-scan-bars { from { opacity: 0.38; transform: scaleY(0.68); } to { opacity: 1; transform: scaleY(1); } }
-@keyframes eqx-scan-sweep { 0% { transform: scaleX(0.12); } 55% { transform: scaleX(0.72); } 100% { transform: scaleX(1); } }
+@keyframes eqx-scan-loop { from { transform: translateX(0); } to { transform: translateX(412.5%); } }
 @keyframes eqx-comparison-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes eqx-notice-in { from { opacity: 0; transform: translate(-50%, -8px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
