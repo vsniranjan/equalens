@@ -84,6 +84,10 @@ test("redesign-all changes every flagged area and compares every changed section
     rationale: "Expand fit while preserving the original specifications.", changes: ["Expanded fit"],
   } }));
   await page.goto(DEMO_ORIGIN);
+  await page.addStyleTag({ content: `
+    .section--surface *, .section--deep *, .section--commission * { visibility: hidden; }
+    #seat-system *, #controls *, #configure * { visibility: visible; }
+  ` });
   await scanPage(page);
   await expect(page.locator(".eqx-panel-status")).toHaveText("Scan complete");
   await page.screenshot({ path: testInfo.outputPath("scan-desktop.png"), animations: "disabled" });
@@ -112,6 +116,7 @@ test("redesign-all changes every flagged area and compares every changed section
   expect.soft(keyboardMovedBox!.x).toBeCloseTo(28, 0);
   await page.screenshot({ path: testInfo.outputPath("preview-desktop.png"), animations: "disabled" });
   await expect.soft(page.locator(".eqx-redesign-original-snapshot")).toHaveCount(4);
+  await expect(page.locator(".eqx-redesign-original-snapshot h2").first()).toHaveCSS("visibility", "visible");
   await page.locator("#configure").scrollIntoViewIfNeeded();
   await page.locator("#seat-system").scrollIntoViewIfNeeded();
   await expect(page.locator(".eqx-redesign-title")).toContainText(demoFindings[0]!.title);

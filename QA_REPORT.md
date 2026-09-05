@@ -1,6 +1,6 @@
 # EquaLens functionality and UI audit
 
-Tested September 5, 2026 against the locally built extension and Meridian mock site, plus the deployed demo and live analysis API.
+Tested September 6, 2026 against the locally built extension and Meridian mock site, plus the deployed demo and live analysis API.
 
 ## Findings and fixes
 
@@ -14,6 +14,7 @@ Tested September 5, 2026 against the locally built extension and Meridian mock s
 | Redesign-all compared only the first modified section. | Create and update a comparison snapshot for each changed target. Browser tests verify all four affected areas. |
 | Preview controls scrolled outside the viewport, became impossible to click, and could cover the content being reviewed. | Keep controls inside the viewport while allowing each before/after dialog to be dragged anywhere on screen by its header or moved with the arrow keys. Preserve the chosen position for that component and constrain it after viewport resizing. Browser tests cover dragging plus 390, 768, and 1440 px layouts. |
 | Computed desktop widths froze comparison layouts on smaller screens. | Preserve inherited appearance while allowing the page stylesheet to lay out snapshots responsively. Snapshots use unique IDs and do not masquerade as real demo targets. |
+| The “before” half could become a black, empty area when the original content depended on CSS selectors scoped through an ancestor or section ID. | Capture every original node’s computed paint, text, opacity, and visibility styles before moving the snapshot and replacing its IDs, while leaving responsive geometry to page CSS. A browser regression recreates the failure with ID-scoped visibility and verifies the original heading remains visible. |
 | Replacing one demo section left related findings unresolved and pointing at removed nodes. | Resolve related findings when the complete registered demo variant is kept. |
 | Demo variants removed headings referenced by section accessibility labels. | Restore the heading IDs. Browser tests check every section's label reference after keep. |
 | Redesign-all could interrupt an unfinished scan and miss later findings. | Disable the bulk action until the deep scan completes or returns an error. A held-response test verifies this behavior. |

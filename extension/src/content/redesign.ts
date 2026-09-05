@@ -15,6 +15,15 @@ const SAFE_ATTRIBUTES = [
   "style", "tabindex", "target", "title", "type", "value", "width",
 ];
 const UNSAFE_STYLE_PATTERN = /(?:expression\s*\(|url\s*\(|@import|behavior\s*:|-moz-binding)/i;
+const SNAPSHOT_VISUAL_PROPERTIES = [
+  "background-color", "background-image", "background-position", "background-repeat", "background-size",
+  "border-bottom-color", "border-bottom-style", "border-bottom-width", "border-left-color", "border-left-style",
+  "border-left-width", "border-radius", "border-right-color", "border-right-style", "border-right-width",
+  "border-top-color", "border-top-style", "border-top-width", "box-shadow", "color", "fill", "filter",
+  "font-family", "font-size", "font-style", "font-weight", "letter-spacing", "line-height", "mix-blend-mode",
+  "opacity", "stroke", "text-align", "text-decoration", "text-shadow", "text-transform", "visibility",
+  "-webkit-text-fill-color",
+] as const;
 
 export interface CapabilityMetrics {
   interactiveElements: number;
@@ -323,12 +332,15 @@ function cloneWithComputedStyles(target: HTMLElement): HTMLElement {
   sources.forEach((source, index) => {
     const copy = clones[index];
     if (!copy) return;
+    const style = view.getComputedStyle(source);
+    for (const property of SNAPSHOT_VISUAL_PROPERTIES) {
+      copy.style.setProperty(property, style.getPropertyValue(property));
+    }
     if (index === 0) {
-      const style = view.getComputedStyle(source);
-      // Keep the inherited appearance, but let page CSS lay out the snapshot at
-      // the current viewport. Copying computed pixel widths freezes desktop layout.
-      for (const property of ["color", "background-color", "font-family", "font-size", "font-weight", "line-height", "text-align"]) {
-        copy.style.setProperty(property, style.getPropertyValue(property));
+      // The clone moves outside its original ancestors and receives unique IDs.
+      // Preserve inherited variables and paint styles without freezing responsive geometry.
+      for (const property of style) {
+        if (property.startsWith("--")) copy.style.setProperty(property, style.getPropertyValue(property));
       }
     }
     copyFormState(source, copy);
