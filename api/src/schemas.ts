@@ -1,25 +1,27 @@
+export type JsonSchema = Readonly<Record<string, unknown>>;
+
 const findingProperties = {
-  id: { type: "STRING" },
-  selector: { type: "STRING", nullable: true },
-  title: { type: "STRING" },
-  assumption: { type: "STRING" },
-  impact: { type: "STRING" },
-  affected: { type: "ARRAY", items: { type: "STRING" } },
-  category: { type: "STRING", enum: ["safety", "usability", "language"] },
+  id: { type: "string" },
+  selector: { type: ["string", "null"] },
+  title: { type: "string" },
+  assumption: { type: "string" },
+  impact: { type: "string" },
+  affected: { type: "array", items: { type: "string" } },
+  category: { type: "string", enum: ["safety", "usability", "language"] },
   severity: {
-    type: "STRING",
+    type: "string",
     enum: ["safety-high", "safety-med", "usability-high", "usability-med", "language"],
   },
-  confidence: { type: "STRING", enum: ["high", "medium", "low"] },
-  evidenceTags: { type: "ARRAY", items: { type: "STRING" } },
-  source: { type: "STRING", enum: ["ai"] },
-  stereotype: { type: "BOOLEAN", nullable: true },
-  redesignable: { type: "BOOLEAN" },
-  fixed: { type: "BOOLEAN" },
+  confidence: { type: "string", enum: ["high", "medium", "low"] },
+  evidenceTags: { type: "array", items: { type: "string" } },
+  source: { type: "string", enum: ["ai"] },
+  stereotype: { type: ["boolean", "null"] },
+  redesignable: { type: "boolean" },
+  fixed: { type: "boolean" },
 } as const;
 
 export const FINDING_SCHEMA = {
-  type: "OBJECT",
+  type: "object",
   properties: findingProperties,
   required: [
     "id",
@@ -36,23 +38,26 @@ export const FINDING_SCHEMA = {
     "redesignable",
     "fixed",
   ],
+  additionalProperties: false,
 } as const;
 
 export const FINDINGS_RESPONSE_SCHEMA = {
-  type: "OBJECT",
+  type: "object",
   properties: {
-    findings: { type: "ARRAY", items: FINDING_SCHEMA },
-    summary: { type: "STRING" },
+    findings: { type: "array", items: FINDING_SCHEMA },
+    summary: { type: "string" },
   },
   required: ["findings", "summary"],
+  additionalProperties: false,
 } as const;
 
 export const REDESIGN_RESPONSE_SCHEMA = {
-  type: "OBJECT",
+  type: "object",
   properties: {
-    rewritten_html: { type: "STRING" },
-    rationale: { type: "STRING" },
-    changes: { type: "ARRAY", items: { type: "STRING" } },
+    rewritten_html: { type: "string" },
+    rationale: { type: "string" },
+    changes: { type: "array", items: { type: "string" } },
   },
   required: ["rewritten_html", "rationale", "changes"],
+  additionalProperties: false,
 } as const;

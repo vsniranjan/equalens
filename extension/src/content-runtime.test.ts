@@ -55,4 +55,36 @@ describe("content script runtime", () => {
       request: { selector: "#crash-copy" },
     });
   });
+
+  it("runs the local scan from the buddy and clears stale findings on re-scan", async () => {
+    const actionEvent = vi.fn();
+    window.addEventListener("equalens:action", actionEvent);
+    controller = bootstrapContentScript(document);
+    const shadow = controller.overlay.host.shadowRoot!;
+    const orb = shadow.querySelector<HTMLButtonElement>('[data-testid="buddy-orb"]')!;
+
+    await act(async () => orb.click());
+    const firstScan = [...shadow.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "Scan page")!;
+    await act(async () => firstScan.click());
+
+    expect(shadow.textContent).toContain("Single-body safety baseline");
+    expect(shadow.querySelector('[data-testid="inclusion-score"]')?.textContent).toBe("82");
+    expect(actionEvent).toHaveBeenLastCalledWith(expect.objectContaining({
+      detail: expect.objectContaining({ action: "scan", count: 1 }),
+    }));
+
+    const close = shadow.querySelector<HTMLButtonElement>('[aria-label="Close findings panel"]')!;
+    await act(async () => close.click());
+    document.querySelector("#crash-copy")!.textContent = "A neutral vehicle description.";
+
+    await act(async () => orb.click());
+    const secondScan = [...shadow.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "Scan page")!;
+    await act(async () => secondScan.click());
+
+    expect(shadow.textContent).not.toContain("Single-body safety baseline");
+    expect(shadow.textContent).toContain("No local findings");
+    expect(shadow.querySelector('[data-testid="inclusion-score"]')?.textContent).toBe("100");
+  });
 });

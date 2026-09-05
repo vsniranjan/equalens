@@ -91,6 +91,20 @@ describe("EquaLens overlay", () => {
     expect(OVERLAY_CSS).toContain("prefers-reduced-motion: reduce");
   });
 
+  it("switches to the static minimal companion without losing the finding count", async () => {
+    const controller = mountOverlay();
+    const shadow = controller.host.shadowRoot!;
+
+    await act(async () => controller.setOrbStatus({ mode: "alert", count: 4 }));
+    await act(async () => controller.setBuddyStyle("minimal"));
+
+    const buddy = shadow.querySelector<HTMLElement>('[data-testid="buddy-orb"]')!;
+    expect(buddy.dataset.style).toBe("minimal");
+    expect(buddy.querySelector(".eqx-buddy-core")).toBeNull();
+    expect(buddy.textContent).toContain("EQL // 04");
+    expect(OVERLAY_CSS).toContain('.eqx-buddy[data-style="minimal"]');
+  });
+
   it("recovers from an analysis error and renders matched verified evidence", async () => {
     const request: AnalyzeRequest = {
       text: "Certified against the 50th-percentile adult male crash test dummy",
@@ -143,5 +157,79 @@ describe("EquaLens overlay", () => {
     expect(shadow.textContent).toContain("verified source");
     expect(shadow.textContent).toContain("AI inference");
     expect(onAnalyze).toHaveBeenLastCalledWith(expect.objectContaining({ mode: "explain" }));
+  });
+
+  it("runs the selection redesign workflow and exposes its page comparison controls", async () => {
+    const request: AnalyzeRequest = {
+      text: "Average adult male baseline",
+      outerHTML: '<p id="target">Average adult male baseline</p>',
+      selector: "#target",
+      context: "Safety baseline",
+      pageTitle: "Vehicle",
+      pageUrl: "https://vehicle.example/",
+      categories: ["safety"],
+    };
+    const finding = {
+      id: "baseline",
+      selector: "#target",
+      title: "Single-body baseline",
+      assumption: "One body represents every occupant.",
+      impact: "Other occupants may receive less protection.",
+      affected: ["shorter occupants"],
+      category: "safety" as const,
+      severity: "safety-high" as const,
+      confidence: "high" as const,
+      evidenceTags: [],
+      source: "ai" as const,
+      redesignable: true,
+      fixed: false,
+    };
+    const onAnalyze = vi.fn().mockResolvedValue({ findings: [finding], summary: "One finding" });
+    const onRedesignSelection = vi.fn().mockResolvedValue(undefined);
+    const controller = mountOverlay({ onAnalyze, onRedesignSelection });
+    controller.setSelection({
+      text: request.text,
+      request,
+      rect: { top: 40, right: 320, bottom: 64, left: 80, width: 240, height: 24 },
+    });
+    const shadow = controller.host.shadowRoot!;
+    const redesign = [...shadow.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "Redesign")!;
+
+    await act(async () => redesign.click());
+    await vi.waitFor(() => expect(onRedesignSelection).toHaveBeenCalledWith(finding, request));
+    expect(shadow.textContent).toContain("Preview ready on the page");
+
+    const target = document.createElement("section");
+    target.getBoundingClientRect = () => DOMRect.fromRect({ x: 80, y: 100, width: 500, height: 240 });
+    document.body.append(target);
+    const onPositionChange = vi.fn();
+    const onKeep = vi.fn();
+    const onRevert = vi.fn();
+    controller.showRedesignComparison({
+      id: "preview",
+      target,
+      finding,
+      rationale: "Expanded the body range.",
+      changes: ["Preserved safety metrics"],
+      scoreBefore: 82,
+      scoreAfter: 100,
+      onPositionChange,
+      onRefresh: vi.fn(),
+      onKeep,
+      onRevert,
+    });
+
+    expect(shadow.textContent).toContain("82 → 100");
+    expect(shadow.textContent).toContain("+18");
+    const before = [...shadow.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "Before")!;
+    await act(async () => before.click());
+    expect(onPositionChange).toHaveBeenLastCalledWith(100);
+    const keep = [...shadow.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "Keep change")!;
+    await act(async () => keep.click());
+    expect(onKeep).toHaveBeenCalledOnce();
+    expect(onRevert).not.toHaveBeenCalled();
   });
 });

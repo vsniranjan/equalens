@@ -2,8 +2,9 @@ import type { AnalyzeResponse, RedesignResponse } from "@equalens/shared/types";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { getOrCreateCached } from "./cache";
-import { HttpError } from "./errors";
-import { generateStructured } from "./gemini";
+import { AIValidationError, HttpError } from "./errors";
+import { generateStructured } from "./ai";
+import { AI_TIMEOUT_MS } from "./constants";
 import { buildAnalyzePrompt, buildRedesignPrompt, buildScanPrompt } from "./prompts";
 import { loadReport, renderReport, storeReport } from "./report";
 import { FINDINGS_RESPONSE_SCHEMA, REDESIGN_RESPONSE_SCHEMA } from "./schemas";
@@ -61,8 +62,7 @@ app.post("/analyze", async (context) => {
     request,
     context.req.query("nocache") === "1",
     async () => {
-      const output = await generateStructured({
-        apiKey: context.env.GEMINI_API_KEY,
+      const output = await generateStructured(context.env, {
         prompt: buildAnalyzePrompt(request),
         responseSchema: FINDINGS_RESPONSE_SCHEMA,
       });
@@ -80,8 +80,7 @@ app.post("/scan", async (context) => {
     request,
     context.req.query("nocache") === "1",
     async () => {
-      const output = await generateStructured({
-        apiKey: context.env.GEMINI_API_KEY,
+      const output = await generateStructured(context.env, {
         prompt: buildScanPrompt(request),
         responseSchema: FINDINGS_RESPONSE_SCHEMA,
       });
@@ -108,12 +107,25 @@ app.post("/redesign", async (context) => {
     request,
     context.req.query("nocache") === "1",
     async () => {
-      const output = await generateStructured({
-        apiKey: context.env.GEMINI_API_KEY,
-        prompt: buildRedesignPrompt(request),
-        responseSchema: REDESIGN_RESPONSE_SCHEMA,
-      });
-      return parseRedesignResponse(output, request.outerHTML);
+      // One corrective attempt shares the original deadline. Unsafe or
+      // capability-reducing output is never cached or sent to the page.
+      const signal = AbortSignal.timeout(AI_TIMEOUT_MS);
+      let retryRequest = request;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const output = await generateStructured(context.env, {
+          prompt: buildRedesignPrompt(retryRequest),
+          responseSchema: REDESIGN_RESPONSE_SCHEMA,
+          signal,
+        });
+        try {
+          return parseRedesignResponse(output, request.outerHTML);
+        } catch (error) {
+          if (!(error instanceof AIValidationError) || attempt === 1) throw error;
+          console.warn(JSON.stringify({ event: "redesign_validation_retry", detail: error.message }));
+          retryRequest = { ...request, violationNote: error.message };
+        }
+      }
+      throw new HttpError(502, "AI response failed validation");
     },
   );
   return context.json({ ...result.value, cached: result.cached });
@@ -130,8 +142,9 @@ app.get("/report/:id", async (context) => {
   if (!/^[a-f0-9]{12}$/.test(id)) throw new HttpError(404, "Report not found");
   const report = await loadReport(context.env.REPORTS, id);
   if (!report) throw new HttpError(404, "Report not found");
-  return context.html(renderReport(report), 200, {
-    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+  const nonce = crypto.randomUUID().replaceAll("-", "");
+  return context.html(renderReport(report, nonce), 200, {
+    "Content-Security-Policy": `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
     "Referrer-Policy": "no-referrer",
     "X-Content-Type-Options": "nosniff",
   });

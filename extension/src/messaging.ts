@@ -23,7 +23,7 @@ export interface ScanCallbacks {
   onError?: (error: Error, status: number) => void;
 }
 
-export async function requestApi<Result>(path: Exclude<ApiPath, "/scan">, body: unknown): Promise<Result> {
+export async function requestApi<Result>(path: ApiPath, body: unknown): Promise<Result> {
   const requestId = crypto.randomUUID();
   const message: ApiRequestMessage = {
     type: "equalens:api-request",
@@ -44,9 +44,22 @@ export async function requestApi<Result>(path: Exclude<ApiPath, "/scan">, body: 
 export function streamScan(request: ScanRequest, callbacks: ScanCallbacks): () => void {
   const requestId = crypto.randomUUID();
   const port = chrome.runtime.connect({ name: "equalens-scan" });
+  let settled = false;
+  let disconnected = false;
+
+  const disconnect = (): void => {
+    if (disconnected) return;
+    disconnected = true;
+    port.disconnect();
+  };
+
+  const stop = (): void => {
+    settled = true;
+    disconnect();
+  };
 
   port.onMessage.addListener((message: unknown) => {
-    if (!isScanPortMessage(message) || message.requestId !== requestId) return;
+    if (settled || !isScanPortMessage(message) || message.requestId !== requestId) return;
     switch (message.type) {
       case "open":
         callbacks.onOpen?.();
@@ -55,17 +68,39 @@ export function streamScan(request: ScanRequest, callbacks: ScanCallbacks): () =
         callbacks.onFinding(message.finding);
         break;
       case "complete":
-        callbacks.onComplete();
+        settled = true;
+        try {
+          callbacks.onComplete();
+        } finally {
+          disconnect();
+        }
         break;
       case "error":
-        callbacks.onError?.(new Error(message.error), message.status);
+        settled = true;
+        try {
+          callbacks.onError?.(new Error(message.error), message.status);
+        } finally {
+          disconnect();
+        }
         break;
     }
   });
 
+  port.onDisconnect?.addListener(() => {
+    if (disconnected || settled) return;
+    disconnected = true;
+    settled = true;
+    callbacks.onError?.(new Error(chrome.runtime.lastError?.message ?? "Deep scan connection closed before completion"), 0);
+  });
+
   const message: ScanStartMessage = { type: "start", requestId, body: request };
-  port.postMessage(message);
-  return () => port.disconnect();
+  try {
+    port.postMessage(message);
+  } catch (error) {
+    stop();
+    throw error;
+  }
+  return stop;
 }
 
 function isApiResponse(value: unknown): value is ApiResponseMessage {

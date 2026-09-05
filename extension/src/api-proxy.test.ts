@@ -1,5 +1,5 @@
 import type { Finding, ScanRequest } from "@equalens/shared/types";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { attachScanPort, createApiRequestHandler, type ScanPort } from "./api-proxy";
 
 const scanRequest: ScanRequest = {
@@ -34,6 +34,36 @@ function listenerSlot<T extends (...args: never[]) => unknown>() {
 }
 
 describe("background API proxy", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("ends a stalled API request with a retryable timeout before Chrome expires the worker", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn<typeof fetch>().mockImplementation((_url, init) => new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+    }));
+    const respond = vi.fn();
+    createApiRequestHandler(fetcher)(
+      { type: "equalens:api-request", requestId: "hung", path: "/report", body: {} },
+      {}, respond,
+    );
+    await vi.advanceTimersByTimeAsync(28_000);
+    expect(respond).toHaveBeenCalledWith(expect.objectContaining({ ok: false, status: 504, error: "EquaLens request timed out. Please try again." }));
+  });
+
+  it("ends a stalled scan without triggering the network fallback a second time", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn<typeof fetch>().mockImplementation((_url, init) => new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+    }));
+    const messages = vi.fn();
+    const incoming = listenerSlot<(message: unknown) => void>();
+    const disconnected = listenerSlot<() => void>();
+    const port: ScanPort = { name: "equalens-scan", postMessage: messages, onMessage: incoming.event, onDisconnect: disconnected.event };
+    attachScanPort(port, fetcher);
+    incoming.get()({ type: "start", requestId: "hung", body: scanRequest });
+    await vi.advanceTimersByTimeAsync(28_000);
+    expect(messages).toHaveBeenCalledWith(expect.objectContaining({ type: "error", status: 504 }));
+  });
   it("adds the API token and returns one-shot JSON responses", async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ findings: [], summary: "Clear" }));
     const handler = createApiRequestHandler(fetcher);
@@ -49,6 +79,14 @@ describe("background API proxy", () => {
     const [url, init] = fetcher.mock.calls[0]!;
     expect(String(url)).toContain("/analyze");
     expect(new Headers(init?.headers).get("X-EquaLens-Key")).toBeTruthy();
+  });
+
+  it("rejects incomplete findings before forwarding a response to React", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ findings: [{ id: "broken" }], summary: "Invalid" }));
+    const response = new Promise((resolve) => createApiRequestHandler(fetcher)(
+      { type: "equalens:api-request", requestId: "bad", path: "/scan", body: {} }, {}, resolve,
+    ));
+    await expect(response).resolves.toMatchObject({ ok: false, status: 502 });
   });
 
   it("relays only complete NDJSON findings over a named port", async () => {
@@ -86,5 +124,28 @@ describe("background API proxy", () => {
       { type: "complete", requestId: "scan-1" },
     ]);
     expect(new Headers(fetcher.mock.calls[0]![1]?.headers).get("Accept")).toBe("application/x-ndjson");
+  });
+
+  it("relays a single JSON scan response when streaming is unavailable", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ findings: [finding], summary: "One finding" }));
+    const messages = vi.fn();
+    const incoming = listenerSlot<(message: unknown) => void>();
+    const disconnected = listenerSlot<() => void>();
+    const port = {
+      name: "equalens-scan",
+      postMessage: messages,
+      onMessage: incoming.event,
+      onDisconnect: disconnected.event,
+    } as unknown as ScanPort;
+
+    attachScanPort(port, fetcher);
+    incoming.get()({ type: "start", requestId: "scan-json", body: scanRequest });
+
+    await vi.waitFor(() => expect(messages).toHaveBeenCalledWith({ type: "complete", requestId: "scan-json" }));
+    expect(messages.mock.calls.map(([message]) => message)).toEqual([
+      { type: "open", requestId: "scan-json" },
+      { type: "data", requestId: "scan-json", finding },
+      { type: "complete", requestId: "scan-json" },
+    ]);
   });
 });

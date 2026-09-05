@@ -22,6 +22,10 @@ export const manifest = {
     default_popup: "index.html",
     default_title: "EquaLens",
   },
+  options_ui: {
+    page: "onboarding.html",
+    open_in_tab: true,
+  },
 } satisfies chrome.runtime.ManifestV3;
 
 export default defineManifest(manifest);

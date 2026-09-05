@@ -2,6 +2,7 @@
   "name": "equalens",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "workspaces": [
     "shared",
     "extension",
@@ -11,9 +12,14 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "test:browser": "playwright test",
+    "test:demo": "EQUALENS_LIVE=1 playwright test e2e/demo-live.spec.ts",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p tsconfig.tools.json"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
   }
 }

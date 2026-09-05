@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "types": ["node", "chrome"]
+  },
+  "include": ["e2e", "scripts", "playwright.config.ts", "api/worker-configuration.d.ts"]
+}

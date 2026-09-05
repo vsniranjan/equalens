@@ -51,6 +51,7 @@ export function buildRedesignPrompt(request: RedesignRequest): string {
 
 ${CAPABILITY_PRESERVATION_PRINCIPLE}
 Return one self-contained HTML fragment, a concise rationale, and an exact list of changes.
+Retain numeric measurements and original benchmark values verbatim; when expanding a validation or fit range, identify the original values as the legacy benchmark rather than deleting them.
 Do not emit scripts, inline event handlers, javascript URLs, or markdown fences.${violation}
 
 REDESIGN_JSON

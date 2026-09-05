@@ -1,3 +1,18 @@
 # Copy this file to .dev.vars for local Wrangler development only.
 # Never commit the real value.
-GEMINI_API_KEY=replace-with-your-google-ai-studio-key
+# Gemini keys (aistudio.google.com), one per Google Cloud project. Rotated per request;
+# at least one required. Fewer than 10 is fine — unset ones are skipped.
+GEMINI_API_KEY_1=replace-with-your-google-ai-studio-key
+GEMINI_API_KEY_2=replace-with-your-google-ai-studio-key
+GEMINI_API_KEY_3=replace-with-your-google-ai-studio-key
+GEMINI_API_KEY_4=replace-with-your-google-ai-studio-key
+GEMINI_API_KEY_5=replace-with-your-google-ai-studio-key
+GEMINI_API_KEY_6=replace-with-your-google-ai-studio-key
+GEMINI_API_KEY_7=replace-with-your-google-ai-studio-key
+GEMINI_API_KEY_8=replace-with-your-google-ai-studio-key
+GEMINI_API_KEY_9=replace-with-your-google-ai-studio-key
+GEMINI_API_KEY_10=replace-with-your-google-ai-studio-key
+# NVIDIA NIM keys (build.nvidia.com/settings). Fallback when every Gemini key is rate limited.
+NVIDIA_NIM_API_KEY_1=replace-with-nvapi-key
+NVIDIA_NIM_API_KEY_2=replace-with-nvapi-key
+NVIDIA_NIM_API_KEY_3=replace-with-nvapi-key

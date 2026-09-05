@@ -11,5 +11,9 @@ describe("extension manifest", () => {
       run_at: "document_idle",
     });
     expect(manifest.host_permissions).toHaveLength(1);
+    expect(manifest.options_ui).toEqual({
+      page: "onboarding.html",
+      open_in_tab: true,
+    });
   });
 });

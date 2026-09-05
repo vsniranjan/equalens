@@ -4,11 +4,13 @@ import { useEffect, useRef, useState } from "react";
 
 export type AnalysisAction = "explain" | "excluded" | "evidence" | "redesign";
 export type AnalyzeHandler = (request: AnalyzeRequest) => Promise<AnalyzeResponse>;
+export type RedesignHandler = (finding: Finding, request: AnalyzeRequest) => Promise<void>;
 export type AnalysisIndicator = { mode: "idle" } | { mode: "thinking" } | { mode: "alert"; count: number };
 
 interface AnalysisCardProps {
   request: AnalyzeRequest;
   onAnalyze: AnalyzeHandler;
+  onRedesign: RedesignHandler;
   onIndicatorChange: (indicator: AnalysisIndicator) => void;
 }
 
@@ -18,6 +20,12 @@ type AnalysisState =
   | { status: "success"; mode: AnalyzeMode; response: AnalyzeResponse }
   | { status: "error"; mode: AnalyzeMode; message: string };
 
+type RedesignState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "success" }
+  | { status: "error"; message: string };
+
 const ACTIONS: ReadonlyArray<{ id: AnalysisAction; label: string }> = [
   { id: "explain", label: "Explain" },
   { id: "excluded", label: "Who's excluded?" },
@@ -25,9 +33,10 @@ const ACTIONS: ReadonlyArray<{ id: AnalysisAction; label: string }> = [
   { id: "redesign", label: "Redesign" },
 ];
 
-export function AnalysisCard({ request, onAnalyze, onIndicatorChange }: AnalysisCardProps) {
+export function AnalysisCard({ request, onAnalyze, onRedesign, onIndicatorChange }: AnalysisCardProps) {
   const [action, setAction] = useState<AnalysisAction>("explain");
   const [state, setState] = useState<AnalysisState>({ status: "idle" });
+  const [redesignState, setRedesignState] = useState<RedesignState>({ status: "idle" });
   const requestKey = `${request.pageUrl}\n${request.selector}\n${request.text}`;
   const currentRequestKey = useRef(requestKey);
   const previousRequestKey = useRef(requestKey);
@@ -38,6 +47,7 @@ export function AnalysisCard({ request, onAnalyze, onIndicatorChange }: Analysis
     previousRequestKey.current = requestKey;
     setAction("explain");
     setState({ status: "idle" });
+    setRedesignState({ status: "idle" });
     onIndicatorChange({ mode: "idle" });
   }, [requestKey, onIndicatorChange]);
 
@@ -67,6 +77,7 @@ export function AnalysisCard({ request, onAnalyze, onIndicatorChange }: Analysis
   const chooseAction = (nextAction: AnalysisAction): void => {
     if (nextAction === "redesign") {
       setAction(nextAction);
+      void runRedesign();
       return;
     }
     if (nextAction === "evidence") {
@@ -86,6 +97,33 @@ export function AnalysisCard({ request, onAnalyze, onIndicatorChange }: Analysis
     void runAnalysis(mode, action);
   };
 
+  async function runRedesign(): Promise<void> {
+    const startedFor = requestKey;
+    setRedesignState({ status: "loading" });
+    onIndicatorChange({ mode: "thinking" });
+    try {
+      const response = state.status === "success"
+        ? state.response
+        : await onAnalyze({ ...request, mode: "explain" });
+      if (currentRequestKey.current !== startedFor) return;
+      const finding = response.findings[0];
+      if (!finding) throw new Error("No redesignable assumption was found for this selection.");
+      if (!finding.redesignable) throw new Error("This finding cannot be redesigned safely in place.");
+      if (state.status !== "success") setState({ status: "success", mode: "explain", response });
+      await onRedesign(finding, request);
+      if (currentRequestKey.current !== startedFor) return;
+      setRedesignState({ status: "success" });
+      onIndicatorChange({ mode: "alert", count: 1 });
+    } catch (error) {
+      if (currentRequestKey.current !== startedFor) return;
+      setRedesignState({
+        status: "error",
+        message: error instanceof Error ? error.message : "EquaLens could not redesign this selection.",
+      });
+      onIndicatorChange({ mode: "idle" });
+    }
+  }
+
   return (
     <section className="eqx-analysis" aria-label="EquaLens selection analysis">
       <header className="eqx-analysis-header">
@@ -103,7 +141,7 @@ export function AnalysisCard({ request, onAnalyze, onIndicatorChange }: Analysis
             className="eqx-analysis-tab"
             type="button"
             aria-pressed={action === id}
-            disabled={state.status === "loading"}
+            disabled={state.status === "loading" || redesignState.status === "loading"}
             key={id}
             onClick={() => chooseAction(id)}
           >
@@ -114,7 +152,7 @@ export function AnalysisCard({ request, onAnalyze, onIndicatorChange }: Analysis
 
       <div className="eqx-analysis-body" aria-live="polite">
         {action === "redesign"
-          ? <DeferredRedesign />
+          ? <RedesignContent state={redesignState} retry={() => void runRedesign()} />
           : <AnalysisContent action={action} state={state} retry={retry} />}
       </div>
     </section>
@@ -152,13 +190,16 @@ function AnalysisContent({ action, state, retry }: {
   return <ExplainResult finding={finding} />;
 }
 
-function ExplainResult({ finding }: { finding: Finding }) {
+export function FindingExplanation({ finding }: { finding: Finding }) {
   const citations = citationsForTags(finding.evidenceTags);
   return (
     <>
       <div className="eqx-finding-heading">
         <span className="eqx-section-label">Hidden assumption</span>
-        <SeverityChip severity={finding.severity} />
+        <div className="eqx-finding-classification">
+          {finding.stereotype && <span className="eqx-stereotype-chip">Stereotype</span>}
+          <SeverityChip severity={finding.severity} />
+        </div>
       </div>
       <p className="eqx-assumption">{finding.assumption}</p>
       <p className="eqx-impact">{finding.impact}</p>
@@ -174,6 +215,8 @@ function ExplainResult({ finding }: { finding: Finding }) {
     </>
   );
 }
+
+const ExplainResult = FindingExplanation;
 
 function ExcludedResult({ finding }: { finding: Finding }) {
   return (
@@ -213,7 +256,7 @@ function EvidenceRows({ finding, citations }: { finding: Finding; citations: Ret
       ))}
       <div className="eqx-inference-row">
         <span>{finding.impact}</span>
-        <small><b aria-hidden="true">◇</b> AI inference</small>
+        <small><b aria-hidden="true">◇</b> {finding.source === "ai" ? "AI" : "Heuristic"} inference</small>
       </div>
     </div>
   );
@@ -240,16 +283,42 @@ function NeutralResult({ summary }: { summary: string }) {
   );
 }
 
-function DeferredRedesign() {
+function RedesignContent({ state, retry }: { state: RedesignState; retry: () => void }) {
+  if (state.status === "loading") {
+    return (
+      <div className="eqx-skeleton" role="status" aria-label="Preparing redesign">
+        <span /><span /><span />
+        <small>Preserving controls and details while preparing the redesign…</small>
+      </div>
+    );
+  }
+  if (state.status === "error") {
+    return (
+      <div className="eqx-analysis-error" role="alert">
+        <strong>Redesign paused</strong>
+        <span>{state.message}</span>
+        <button type="button" onClick={retry}>Try again</button>
+      </div>
+    );
+  }
+  if (state.status === "success") {
+    return (
+      <div className="eqx-neutral-result">
+        <span className="eqx-neutral-mark" aria-hidden="true">↔</span>
+        <strong>Preview ready on the page</strong>
+        <span>Compare both versions, then keep the inclusive change or revert it.</span>
+      </div>
+    );
+  }
   return (
     <div className="eqx-analysis-prompt">
-      <strong>Redesign is coming next</strong>
-      <span>The selected element and its evidence are ready for the redesign workflow.</span>
+      <strong>Ready to redesign this assumption</strong>
+      <span>EquaLens will preserve the original controls, information, and user capability.</span>
     </div>
   );
 }
 
-function SeverityChip({ severity }: { severity: Severity }) {
+export function SeverityChip({ severity }: { severity: Severity }) {
   const label = severity === "language"
     ? "Language"
     : `${severity.startsWith("safety") ? "Safety" : "Usability"} ${severity.endsWith("high") ? "high" : "medium"}`;

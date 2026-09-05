@@ -8,8 +8,19 @@
     { "binding": "CACHE" },
     { "binding": "REPORTS" }
   ],
+  "ratelimits": [
+    {
+      "name": "API_RATE_LIMITER",
+      "namespace_id": "2026090501",
+      "simple": { "limit": 30, "period": 60 }
+    }
+  ],
   "secrets": {
-    "required": ["GEMINI_API_KEY"]
+    "required": [
+      "GEMINI_API_KEY_1", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3", "GEMINI_API_KEY_4", "GEMINI_API_KEY_5",
+      "GEMINI_API_KEY_6", "GEMINI_API_KEY_7", "GEMINI_API_KEY_8", "GEMINI_API_KEY_9", "GEMINI_API_KEY_10",
+      "NVIDIA_NIM_API_KEY_1", "NVIDIA_NIM_API_KEY_2", "NVIDIA_NIM_API_KEY_3"
+    ]
   },
   "observability": {
     "enabled": true,

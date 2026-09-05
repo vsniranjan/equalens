@@ -1,6 +1,6 @@
 import { EQUALENS_API_KEY } from "@equalens/shared/config";
 import type { Context, Next } from "hono";
-import { RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_SECONDS } from "./constants";
+import { RATE_LIMIT_WINDOW_SECONDS } from "./constants";
 import { HttpError } from "./errors";
 
 export async function protectRoute(context: Context<{ Bindings: Env }>, next: Next): Promise<Response | void> {
@@ -15,17 +15,12 @@ export async function protectRoute(context: Context<{ Bindings: Env }>, next: Ne
 
 async function enforceRateLimit(context: Context<{ Bindings: Env }>): Promise<void> {
   const now = Date.now();
-  const window = Math.floor(now / (RATE_LIMIT_WINDOW_SECONDS * 1_000));
   const ip = context.req.header("CF-Connecting-IP") ?? "unknown";
-  const key = `rate:${ip}:${window}`;
-  const current = Number.parseInt((await context.env.CACHE.get(key)) ?? "0", 10);
-
-  if (current >= RATE_LIMIT_REQUESTS) {
+  const { success } = await context.env.API_RATE_LIMITER.limit({ key: ip });
+  if (!success) {
     const retryAfter = RATE_LIMIT_WINDOW_SECONDS - Math.floor((now / 1_000) % RATE_LIMIT_WINDOW_SECONDS);
     throw new HttpError(429, "Rate limit exceeded", "Rate limit exceeded", { "Retry-After": String(retryAfter) });
   }
-
-  await context.env.CACHE.put(key, String(current + 1), { expirationTtl: RATE_LIMIT_WINDOW_SECONDS * 2 });
 }
 
 async function constantTimeEqual(received: string, expected: string): Promise<boolean> {

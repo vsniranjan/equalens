@@ -2,6 +2,10 @@ import { API_ORIGIN, EQUALENS_API_KEY } from "@equalens/shared/config";
 import type { Finding, ScanRequest } from "@equalens/shared/types";
 
 const API_PATHS = ["/analyze", "/scan", "/redesign", "/report"] as const;
+// Allow the Worker's 25-second AI deadline plus network overhead, while
+// finishing before Chrome's 30-second service-worker fetch deadline.
+const REQUEST_TIMEOUT_MS = 28_000;
+const TIMEOUT_MESSAGE = "EquaLens request timed out. Please try again.";
 export type ApiPath = (typeof API_PATHS)[number];
 
 export interface ApiRequestMessage {
@@ -59,15 +63,26 @@ export function attachScanPort(port: ScanPort, fetcher: typeof fetch = fetch): v
 }
 
 async function requestJson(message: ApiRequestMessage, fetcher: typeof fetch): Promise<Record<string, unknown>> {
+  const deadline = requestDeadline();
   try {
-    const response = await fetcher(`${API_ORIGIN}${message.path}`, requestInit(message.body));
+    const response = await fetcher(`${API_ORIGIN}${message.path}`, requestInit(message.body, deadline.signal));
     const data = await response.json() as unknown;
     if (!response.ok) {
       return { type: "equalens:api-response", requestId: message.requestId, ok: false, status: response.status, error: publicError(data) };
     }
+    if ((message.path === "/analyze" || message.path === "/scan")
+      && (!isRecord(data) || !Array.isArray(data.findings) || !data.findings.every(isFinding) || typeof data.summary !== "string")) {
+      return { type: "equalens:api-response", requestId: message.requestId, ok: false, status: 502, error: "EquaLens received an invalid analysis response. Please try again." };
+    }
     return { type: "equalens:api-response", requestId: message.requestId, ok: true, status: response.status, data };
   } catch {
-    return { type: "equalens:api-response", requestId: message.requestId, ok: false, status: 0, error: "Unable to reach EquaLens" };
+    return {
+      type: "equalens:api-response", requestId: message.requestId, ok: false,
+      status: deadline.signal.aborted ? 504 : 0,
+      error: deadline.signal.aborted ? TIMEOUT_MESSAGE : "Unable to reach EquaLens",
+    };
+  } finally {
+    deadline.clear();
   }
 }
 
@@ -78,10 +93,11 @@ async function relayScan(
   signal: AbortSignal,
   isDisconnected: () => boolean,
 ): Promise<void> {
+  const deadline = requestDeadline();
   post(port, isDisconnected, { type: "open", requestId: message.requestId });
   try {
-    const response = await fetcher(`${API_ORIGIN}/scan`, requestInit(message.body, signal, "application/x-ndjson"));
-    if (!response.ok || !response.body) {
+    const response = await fetcher(`${API_ORIGIN}/scan`, requestInit(message.body, AbortSignal.any([signal, deadline.signal]), "application/x-ndjson"));
+    if (!response.ok) {
       const data = await safeJson(response);
       post(port, isDisconnected, {
         type: "error",
@@ -91,6 +107,19 @@ async function relayScan(
       });
       return;
     }
+
+    if (response.headers.get("Content-Type")?.includes("application/json")) {
+      const data = await response.json() as unknown;
+      if (!isRecord(data) || !Array.isArray(data.findings)) throw new Error("Invalid scan response");
+      for (const finding of data.findings) {
+        if (!isFinding(finding)) throw new Error("Invalid scan finding");
+        post(port, isDisconnected, { type: "data", requestId: message.requestId, finding });
+      }
+      post(port, isDisconnected, { type: "complete", requestId: message.requestId });
+      return;
+    }
+
+    if (!response.body) throw new Error("Empty scan response");
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -110,16 +139,41 @@ async function relayScan(
     post(port, isDisconnected, {
       type: "error",
       requestId: message.requestId,
-      status: 0,
-      error: error instanceof Error ? "EquaLens scan was interrupted" : "Unable to reach EquaLens",
+      status: deadline.signal.aborted ? 504 : 0,
+      error: deadline.signal.aborted ? TIMEOUT_MESSAGE : error instanceof Error ? "EquaLens scan response was interrupted" : "Unable to reach EquaLens",
     });
+  } finally {
+    deadline.clear();
   }
+}
+
+function requestDeadline(): { signal: AbortSignal; clear: () => void } {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  return { signal: controller.signal, clear: () => clearTimeout(timer) };
 }
 
 function relayLine(line: string, requestId: string, port: ScanPort, isDisconnected: () => boolean): void {
   if (!line.trim()) return;
-  const finding = JSON.parse(line) as Finding;
+  const finding: unknown = JSON.parse(line);
+  if (!isFinding(finding)) throw new Error("Invalid scan finding");
   post(port, isDisconnected, { type: "data", requestId, finding });
+}
+
+function isFinding(value: unknown): value is Finding {
+  if (!isRecord(value)) return false;
+  const strings = [value.id, value.title, value.assumption, value.impact];
+  const stringArray = (items: unknown): items is string[] => Array.isArray(items)
+    && items.every((item) => typeof item === "string" && item.trim().length > 0);
+  return strings.every((item) => typeof item === "string" && item.trim().length > 0)
+    && (value.selector === null || typeof value.selector === "string")
+    && typeof value.category === "string" && ["safety", "usability", "language"].includes(value.category)
+    && typeof value.severity === "string" && ["safety-high", "safety-med", "usability-high", "usability-med", "language"].includes(value.severity)
+    && typeof value.confidence === "string" && ["high", "medium", "low"].includes(value.confidence)
+    && (value.source === "ai" || value.source === "heuristic")
+    && typeof value.fixed === "boolean" && typeof value.redesignable === "boolean"
+    && (value.stereotype === undefined || typeof value.stereotype === "boolean")
+    && stringArray(value.affected) && stringArray(value.evidenceTags);
 }
 
 function post(port: ScanPort, isDisconnected: () => boolean, message: unknown): void {

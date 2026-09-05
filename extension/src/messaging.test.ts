@@ -90,4 +90,25 @@ describe("content runtime messaging", () => {
     stop();
     expect(disconnect).toHaveBeenCalledOnce();
   });
+
+  it("reports an interrupted scan so the caller can use its fallback", () => {
+    const messages = listenerSlot<(message: unknown) => void>();
+    const disconnects = listenerSlot<() => void>();
+    const connect = vi.fn().mockReturnValue({
+      name: "equalens-scan",
+      postMessage: vi.fn(),
+      disconnect: vi.fn(),
+      onMessage: messages.event,
+      onDisconnect: disconnects.event,
+    });
+    vi.stubGlobal("chrome", { runtime: { connect, lastError: undefined } });
+    const onError = vi.fn();
+
+    streamScan(scanRequest, { onFinding: vi.fn(), onComplete: vi.fn(), onError });
+    disconnects.get()();
+
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({
+      message: "Deep scan connection closed before completion",
+    }), 0);
+  });
 });
