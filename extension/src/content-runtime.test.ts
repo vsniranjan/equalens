@@ -68,9 +68,9 @@ describe("content script runtime", () => {
       .find((button) => button.textContent === "Scan page")!;
     await act(async () => firstScan.click());
 
-    expect(shadow.textContent).toContain("Deep scan in progress");
+    expect(shadow.textContent).toContain("AI scan in progress");
     expect(shadow.querySelectorAll(".eqx-finding-row")).toHaveLength(0);
-    expect(shadow.querySelector('[data-testid="inclusion-score"]')?.textContent).toBe("100");
+    expect(shadow.querySelector('[data-testid="inclusion-score"]')?.textContent).toBe("—");
     expect(actionEvent).toHaveBeenLastCalledWith(expect.objectContaining({
       detail: expect.objectContaining({ action: "scan", count: 0 }),
     }));
@@ -86,6 +86,6 @@ describe("content script runtime", () => {
 
     expect(shadow.textContent).not.toContain("Single-body safety baseline");
     expect(shadow.querySelectorAll(".eqx-finding-row")).toHaveLength(0);
-    expect(shadow.querySelector('[data-testid="inclusion-score"]')?.textContent).toBe("100");
+    expect(shadow.querySelector('[data-testid="inclusion-score"]')?.textContent).toBe("—");
   });
 });

@@ -69,7 +69,10 @@ describe("Phase 5 scan overlay", () => {
 
   it("renders resolved heatmap locations and panel-only selector misses", async () => {
     controller = mountOverlay();
-    await act(async () => controller!.showScan([safetyFinding, approximateFinding]));
+    await act(async () => {
+      controller!.showScan([safetyFinding, approximateFinding]);
+      controller!.setScanStatus({ mode: "complete" });
+    });
     const shadow = controller.host.shadowRoot!;
     const groups = [...shadow.querySelectorAll<HTMLElement>(".eqx-finding-group")];
 
@@ -85,7 +88,10 @@ describe("Phase 5 scan overlay", () => {
 
   it("scrolls and pulses a focused finding, then marking it fixed raises the score", async () => {
     controller = mountOverlay();
-    await act(async () => controller!.showScan([safetyFinding, approximateFinding]));
+    await act(async () => {
+      controller!.showScan([safetyFinding, approximateFinding]);
+      controller!.setScanStatus({ mode: "complete" });
+    });
     const shadow = controller.host.shadowRoot!;
     const summary = [...shadow.querySelectorAll<HTMLButtonElement>(".eqx-finding-summary")]
       .find((button) => button.textContent?.includes(safetyFinding.title))!;
@@ -113,7 +119,10 @@ describe("Phase 5 scan overlay", () => {
   it("dispatches deferred redesign and export actions with the current findings", async () => {
     const onScanAction = vi.fn();
     controller = mountOverlay({ onScanAction });
-    await act(async () => controller!.showScan([safetyFinding]));
+    await act(async () => {
+      controller!.showScan([safetyFinding]);
+      controller!.setScanStatus({ mode: "complete" });
+    });
     const shadow = controller.host.shadowRoot!;
     const summary = shadow.querySelector<HTMLButtonElement>(".eqx-finding-summary")!;
     await act(async () => summary.click());
@@ -131,7 +140,10 @@ describe("Phase 5 scan overlay", () => {
 
   it("locks report export while preparing and exposes a retryable error", async () => {
     controller = mountOverlay();
-    await act(async () => controller!.showScan([safetyFinding]));
+    await act(async () => {
+      controller!.showScan([safetyFinding]);
+      controller!.setScanStatus({ mode: "complete" });
+    });
     const shadow = controller.host.shadowRoot!;
 
     await act(async () => controller!.setReportStatus({ mode: "exporting" }));
@@ -149,5 +161,20 @@ describe("Phase 5 scan overlay", () => {
     expect(scoreFindings([safetyFinding, approximateFinding])).toBe(79);
     expect(scoreFindings([{ ...safetyFinding, fixed: true }, approximateFinding])).toBe(97);
     expect(scoreFindings([{ ...safetyFinding, fixed: true }, { ...approximateFinding, fixed: true }])).toBe(100);
+  });
+
+  it("shows a prominent pending state before the AI report completes", async () => {
+    controller = mountOverlay();
+    await act(async () => controller!.showScan([]));
+    const shadow = controller.host.shadowRoot!;
+
+    expect(shadow.querySelector(".eqx-panel-status")?.textContent).toBe("AI scanning");
+    expect(shadow.querySelector(".eqx-deep-scan-progress")).not.toBeNull();
+    expect(shadow.querySelector('[data-testid="inclusion-score"]')?.textContent).toBe("—");
+    expect(shadow.textContent).toContain("Score pending");
+
+    await act(async () => controller!.setScanStatus({ mode: "complete" }));
+    expect(shadow.querySelector('[data-testid="inclusion-score"]')?.textContent).toBe("100");
+    expect(shadow.textContent).toContain("No AI findings");
   });
 });

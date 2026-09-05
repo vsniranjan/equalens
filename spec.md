@@ -170,7 +170,8 @@ mis-highlights.
 
 Slide-in panel (right side, ~380 px, in shadow DOM):
 
-- Header: **Inclusion Score** — large number 0–100, animated ring.
+- Header: **Inclusion Score** — a pending dash while AI is scanning, then a
+  large 0–100 number and animated ring only after the report completes.
 - Findings list grouped by severity (safety → usability → language); each row:
   icon, title, one-line assumption, chevron → expands to full Explain card;
   hover → scrolls page to element and pulses its glow.
@@ -227,12 +228,13 @@ narration is real AI, the pixels are pre-built. Path B renders inside the
 page DOM (not shadow DOM) via a namespaced class prefix `eqx-` to avoid style
 collisions.
 
-**Before/After slider:** after any redesign, a floating control appears pinned
-to the element: a draggable slider crossfades between a snapshot of the
-original (captured as cloned node, absolutely positioned) and the new version;
-plus an instant toggle button. "Keep" dismisses the control and marks the
-finding fixed (score rises); "Revert" restores the original node (we retain the
-original element reference, so SPA-safe within the session).
+**Before/After review:** every redesigned component gets its own floating
+control pinned to that component while it is in view. Its slider crossfades
+between an absolutely positioned snapshot of the original and the new version.
+Users approve or reject each component independently. Approval keeps that
+component and resolves its related findings; rejection restores only that
+component. The review advances through remaining components and applies the
+score change from the accepted subset when all decisions are complete.
 
 ### 2.9 Onboarding
 
@@ -400,8 +402,8 @@ detects — the *analysis* is real; only the Path-B redesign pixels are pre-buil
 3. **Scan page** → AI reviews the page, then the dimmer and heatmap bloom as
    findings stream in → panel opens, Inclusion Score: e.g. **41**.
 4. **Redesign all** → seat diagram morphs, specs rewrite with typewriter,
-   form fixes → before/after slider on the hero finding → score counts up to
-   e.g. **86**, ring turns green.
+   form fixes → each changed component gets its own pinned review control →
+   approve or reject changes individually and watch the accepted score update.
 5. Switch tab to real car-manufacturer page → **Scan** → AI findings appear
    on a site we don't control ("works anywhere").
 6. **Export report** → open the shareable report URL — the designer story.

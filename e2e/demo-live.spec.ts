@@ -27,7 +27,10 @@ test("live production diagnostic", async ({ page, context, worker }, testInfo) =
     await expect(page.locator(".eqx-redesign-comparison, .eqx-redesign-notice[data-mode=error]")).toBeVisible({ timeout: 85_000 });
     await expect(page.locator(".eqx-redesign-notice[data-mode=error]")).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath("redesign-preview.png"), fullPage: true });
-    await page.getByRole("button", { name: "Keep change", exact: true }).click();
+    const previewCount = await page.locator(".eqx-redesign-original-snapshot").count();
+    for (let index = 0; index < previewCount; index += 1) {
+      await page.getByRole("button", { name: "Approve change", exact: true }).first().click();
+    }
     const reportPromise = context.waitForEvent("page");
     await page.getByRole("button", { name: "Export report", exact: true }).click();
     const report = await reportPromise;

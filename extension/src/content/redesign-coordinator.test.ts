@@ -31,17 +31,17 @@ const finding = (id: string, selector: string): Finding => ({
 });
 
 function overlayHarness() {
-  let comparison: RedesignComparisonModel | null = null;
+  let comparisons: readonly RedesignComparisonModel[] = [];
   let notice: RedesignNotice | null = null;
   const overlay = {
     host: document.createElement("div"),
     setSelection: vi.fn(), setOrbStatus: vi.fn(), setInspection: vi.fn(), showScan: vi.fn(),
     setFindings: vi.fn(), setScanStatus: vi.fn(), openPanel: vi.fn(), closePanel: vi.fn(),
     refreshPosition: vi.fn(), destroy: vi.fn(),
-    showRedesignComparison: vi.fn((value: RedesignComparisonModel | null) => { comparison = value; }),
+    showRedesignComparisons: vi.fn((value: readonly RedesignComparisonModel[]) => { comparisons = value; }),
     setRedesignNotice: vi.fn((value: RedesignNotice | null) => { notice = value; }),
   } as unknown as OverlayController;
-  return { overlay, comparison: () => comparison, notice: () => notice };
+  return { overlay, comparison: () => comparisons[0] ?? null, comparisons: () => comparisons, notice: () => notice };
 }
 
 describe("Phase 7 redesign transaction coordinator", () => {
@@ -94,9 +94,9 @@ describe("Phase 7 redesign transaction coordinator", () => {
     expect(harness.comparison()?.scoreBefore).toBe(82);
     expect(harness.comparison()?.scoreAfter).toBe(100);
 
-    harness.comparison()?.onKeep();
+    harness.comparison()?.onApprove();
     expect(findings()[0]?.fixed).toBe(true);
-    expect(harness.notice()).toEqual({ mode: "payoff", scoreBefore: 82, scoreAfter: 100 });
+    expect(harness.notice()).toEqual({ mode: "payoff", scoreBefore: 82, scoreAfter: 100, accepted: 1, rejected: 0 });
   });
 
   it("fails loudly after a second capability-reducing response and leaves the DOM untouched", async () => {
@@ -120,7 +120,7 @@ describe("Phase 7 redesign transaction coordinator", () => {
     )));
 
     await coordinator.redesignSelection(item);
-    harness.comparison()?.onRevert();
+    harness.comparison()?.onReject();
 
     expect(document.body.innerHTML).toBe(original);
     expect(coordinator.hasOpenPreview()).toBe(false);
@@ -142,6 +142,30 @@ describe("Phase 7 redesign transaction coordinator", () => {
     expect(harness.notice()).toMatchObject({ mode: "error", message: "Redesign service unavailable" });
   });
 
+  it("reviews multiple redesigned components independently", async () => {
+    document.body.innerHTML = '<section id="one">First specification</section><section id="two">Second specification</section>';
+    const items = [finding("one", "#one"), finding("two", "#two")];
+    const requestRedesign = vi.fn()
+      .mockResolvedValueOnce(response('<section id="one">First specification expanded</section>'))
+      .mockResolvedValueOnce(response('<section id="two">Second specification expanded</section>'));
+    const { coordinator, harness, findings } = setup(items, requestRedesign);
+
+    await coordinator.redesignFromPanel(items);
+    expect(harness.comparisons()).toHaveLength(2);
+    expect(harness.comparisons().map(({ finding: item }) => item.id)).toEqual(["one", "two"]);
+
+    harness.comparisons()[0]!.onApprove();
+    expect(harness.comparisons()).toHaveLength(1);
+    expect(harness.comparisons()[0]).toMatchObject({ scoreBefore: 82, scoreAfter: 100 });
+    expect(document.querySelector("#one")?.textContent).toContain("expanded");
+
+    harness.comparisons()[0]!.onReject();
+    expect(document.querySelector("#one")?.textContent).toContain("expanded");
+    expect(document.querySelector("#two")?.textContent).toBe("Second specification");
+    expect(findings().map(({ fixed }) => fixed)).toEqual([true, false]);
+    expect(harness.notice()).toEqual({ mode: "payoff", scoreBefore: 64, scoreAfter: 82, accepted: 1, rejected: 1 });
+  });
+
   it("surfaces missing-target errors from panel actions before a transaction starts", async () => {
     const item = finding("missing", "#removed-target");
     const requestRedesign = vi.fn();
@@ -158,7 +182,7 @@ describe("Phase 7 redesign transaction coordinator", () => {
     const items = [finding("restraint", "#restraint"), finding("headrest", "#headrest")];
     const { coordinator, harness, findings } = setup(items, vi.fn().mockResolvedValue(response("<p>Expanded fit</p>")));
     await coordinator.redesignFromPanel([items[0]!]);
-    harness.comparison()?.onKeep();
+    harness.comparison()?.onApprove();
     expect(findings().every(({ fixed }) => fixed)).toBe(true);
   });
 
@@ -173,7 +197,7 @@ describe("Phase 7 redesign transaction coordinator", () => {
     finish(response('<section id="form"><input name="firstName"><p>Original guidance with more options</p></section>'));
     await run;
     expect(document.querySelector("input")!.value).toBe("Typed while waiting");
-    harness.comparison()?.onRevert();
+    harness.comparison()?.onReject();
     expect(document.querySelector("input")!.value).toBe("Typed while waiting");
   });
 });

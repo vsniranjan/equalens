@@ -1,6 +1,7 @@
 import { calculateInclusionScore } from "@equalens/shared/tokens";
 import type { Finding, RedesignRequest, RedesignResponse } from "@equalens/shared/types";
 import type { OverlayController } from "./overlay";
+import type { RedesignComparisonModel } from "./redesign-overlay";
 import {
   applySanitizedRedesign,
   captureElementSnapshot,
@@ -44,9 +45,11 @@ interface AppliedRedesign {
 interface ActiveTransaction {
   applied: AppliedRedesign[];
   comparisons: ReturnType<typeof createComparisonSnapshot>[];
+  models: RedesignComparisonModel[];
+  accepted: Set<number>;
+  decided: Set<number>;
   origin: RedesignOrigin;
   scoreBefore: number;
-  scoreAfter: number;
 }
 
 class RedesignCancelled extends Error {}
@@ -142,31 +145,41 @@ export class RedesignCoordinator {
       for (const result of applied) comparisons.push(createComparisonSnapshot(result.snapshot));
       focusTarget(this.options.document, primary.snapshot.target);
       const scoreBefore = score(this.options.getFindings());
-      const fixedIds = new Set(applied.flatMap(({ findingIds }) => findingIds));
-      const fixedSelectors = new Set(applied.map(({ finding }) => finding.selector).filter((selector): selector is string => selector !== null));
-      const scoreAfter = score(this.options.getFindings().map((finding) => (
-        fixedIds.has(finding.id) || (finding.selector !== null && fixedSelectors.has(finding.selector))
-          ? { ...finding, fixed: true }
-          : finding
-      )));
-      const transaction: ActiveTransaction = { applied, comparisons, origin, scoreBefore, scoreAfter };
+      const transaction: ActiveTransaction = {
+        applied,
+        comparisons,
+        models: [],
+        accepted: new Set(),
+        decided: new Set(),
+        origin,
+        scoreBefore,
+      };
+      transaction.models = applied.map((result, index) => {
+        const model: RedesignComparisonModel = {
+          id: `${generation}:${result.finding.id}`,
+          target: result.snapshot.target,
+          finding: result.finding,
+          index: index + 1,
+          total: applied.length,
+          rationale: result.response.rationale,
+          changes: result.response.changes,
+          scoreBefore,
+          scoreAfter: scoreAfterAccepting(this.options.getFindings(), [result]),
+          position: 50,
+          onPositionChange: (percent) => {
+            model.position = percent;
+            comparisons[index]?.setPosition(percent);
+          },
+          onRefresh: () => comparisons[index]?.refresh(),
+          onApprove: () => this.decide(transaction, index, true),
+          onReject: () => this.decide(transaction, index, false),
+        };
+        return model;
+      });
       this.active = transaction;
       this.pending = [];
       this.options.overlay.setRedesignNotice(null);
-      this.options.overlay.showRedesignComparison({
-        id: `${generation}:${primary.finding.id}`,
-        target: primary.snapshot.target,
-        finding: primary.finding,
-        targetCount: applied.length,
-        rationale: primary.response.rationale,
-        changes: primary.response.changes,
-        scoreBefore,
-        scoreAfter,
-        onPositionChange: (percent) => comparisons.forEach((comparison) => comparison.setPosition(percent)),
-        onRefresh: () => comparisons.forEach((comparison) => comparison.refresh()),
-        onKeep: () => this.keep(transaction),
-        onRevert: () => this.revert(transaction),
-      });
+      this.options.overlay.showRedesignComparisons(transaction.models);
       this.options.onPreviewReady?.();
     } catch (error) {
       comparisons.forEach((comparison) => comparison.destroy());
@@ -234,30 +247,47 @@ export class RedesignCoordinator {
     return { snapshot, finding: item.finding, findingIds: item.findingIds, response };
   }
 
-  private keep(transaction: ActiveTransaction): void {
-    if (this.active !== transaction) return;
-    transaction.comparisons.forEach((comparison) => comparison.destroy());
+  private decide(transaction: ActiveTransaction, index: number, approved: boolean): void {
+    if (this.active !== transaction || transaction.decided.has(index)) return;
+    const result = transaction.applied[index];
+    if (!result) return;
+
+    transaction.decided.add(index);
+    transaction.comparisons[index]?.destroy();
+    if (approved) transaction.accepted.add(index);
+    else restoreElementSnapshot(result.snapshot);
+
+    const remaining = transaction.models.filter((_, modelIndex) => !transaction.decided.has(modelIndex));
+    if (remaining.length > 0) {
+      const acceptedResults = [...transaction.accepted].map((acceptedIndex) => transaction.applied[acceptedIndex]!).filter(Boolean);
+      const currentScore = scoreAfterAccepting(this.options.getFindings(), acceptedResults);
+      for (const model of remaining) {
+        const modelIndex = transaction.models.indexOf(model);
+        const modelResult = transaction.applied[modelIndex];
+        model.scoreBefore = currentScore;
+        model.scoreAfter = modelResult
+          ? scoreAfterAccepting(this.options.getFindings(), [...acceptedResults, modelResult])
+          : currentScore;
+      }
+      this.options.overlay.showRedesignComparisons(remaining);
+      focusTarget(this.options.document, remaining[0]!.target);
+      return;
+    }
+
+    const accepted = [...transaction.accepted].map((acceptedIndex) => transaction.applied[acceptedIndex]!).filter(Boolean);
+    const nextFindings = markAcceptedFindings(this.options.getFindings(), accepted);
+    const scoreAfter = score(nextFindings);
     this.active = null;
-    this.options.overlay.showRedesignComparison(null);
+    this.options.overlay.showRedesignComparisons([]);
     if (transaction.origin === "panel") this.options.overlay.openPanel();
-    const fixedIds = new Set(transaction.applied.flatMap(({ findingIds }) => findingIds));
-    const fixedSelectors = new Set(transaction.applied.map(({ finding }) => finding.selector).filter((selector): selector is string => selector !== null));
-    this.options.setFindings(this.options.getFindings().map((finding) => (
-      fixedIds.has(finding.id) || (finding.selector !== null && fixedSelectors.has(finding.selector))
-        ? { ...finding, fixed: true }
-        : finding
-    )));
+    this.options.setFindings(nextFindings);
     this.options.overlay.setRedesignNotice({
       mode: "payoff",
       scoreBefore: transaction.scoreBefore,
-      scoreAfter: transaction.scoreAfter,
+      scoreAfter,
+      accepted: accepted.length,
+      rejected: transaction.applied.length - accepted.length,
     });
-  }
-
-  private revert(transaction: ActiveTransaction): void {
-    if (this.active !== transaction) return;
-    this.revertActive(transaction.origin === "panel");
-    this.options.overlay.setRedesignNotice(null);
   }
 
   private revertActive(reopenPanel: boolean): void {
@@ -266,7 +296,7 @@ export class RedesignCoordinator {
     transaction.comparisons.forEach((comparison) => comparison.destroy());
     for (const result of [...transaction.applied].reverse()) restoreElementSnapshot(result.snapshot);
     this.active = null;
-    this.options.overlay.showRedesignComparison(null);
+    this.options.overlay.showRedesignComparisons([]);
     if (reopenPanel) this.options.overlay.openPanel();
   }
 
@@ -355,6 +385,20 @@ function validResponse(value: RedesignResponse): RedesignResponse {
 
 function score(findings: readonly Finding[]): number {
   return calculateInclusionScore(findings.filter(({ fixed }) => !fixed).map(({ severity }) => severity));
+}
+
+function scoreAfterAccepting(findings: readonly Finding[], accepted: readonly AppliedRedesign[]): number {
+  return score(markAcceptedFindings(findings, accepted));
+}
+
+function markAcceptedFindings(findings: readonly Finding[], accepted: readonly AppliedRedesign[]): Finding[] {
+  const fixedIds = new Set(accepted.flatMap(({ findingIds }) => findingIds));
+  const fixedSelectors = new Set(accepted.map(({ finding }) => finding.selector).filter((selector): selector is string => selector !== null));
+  return findings.map((finding) => (
+    fixedIds.has(finding.id) || (finding.selector !== null && fixedSelectors.has(finding.selector))
+      ? { ...finding, fixed: true }
+      : finding
+  ));
 }
 
 function focusTarget(document: Document, target: HTMLElement): void {

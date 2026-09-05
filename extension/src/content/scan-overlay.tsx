@@ -117,7 +117,7 @@ export function ScanOverlay({ document, findings, scanStatus, reportStatus, onCl
         <div className="eqx-panel-scroll">
           {scanStatus.mode === "scanning" && <DeepScanProgress />}
           {scanStatus.mode === "error" && <DeepScanError message={scanStatus.message} onRetry={onRetry} />}
-          <ScoreSummary document={document} score={score} total={findings.length} open={activeFindings.length} />
+          <ScoreSummary document={document} score={score} total={findings.length} open={activeFindings.length} scanStatus={scanStatus} />
           <div className="eqx-findings-list">
             {findings.length === 0 && scanStatus.mode === "complete" ? (
               <div className="eqx-findings-empty">
@@ -261,11 +261,11 @@ function FindingRow({ finding, approximate, expanded, onFocus, onToggle, onMarkF
 
 function DeepScanProgress() {
   return (
-    <div className="eqx-deep-scan-progress" role="status">
+    <div className="eqx-deep-scan-progress" role="status" aria-live="polite">
       <span className="eqx-deep-scan-mark" aria-hidden="true" />
       <span>
-        <strong>Deep scan in progress</strong>
-        <small>AI is reviewing the visible page content.</small>
+        <strong>AI scan in progress</strong>
+        <small>Reviewing the visible page content now. Results will appear when the report is ready.</small>
       </span>
       <span className="eqx-deep-scan-bars" aria-hidden="true"><i /><i /><i /></span>
     </div>
@@ -285,7 +285,36 @@ function DeepScanError({ message, onRetry }: { message: string; onRetry: () => v
   );
 }
 
-function ScoreSummary({ document, score, total, open }: { document: Document; score: number; total: number; open: number }) {
+function ScoreSummary({ document, score, total, open, scanStatus }: {
+  document: Document;
+  score: number;
+  total: number;
+  open: number;
+  scanStatus: DeepScanStatus;
+}) {
+  if (scanStatus.mode !== "complete") {
+    const scanning = scanStatus.mode === "scanning";
+    const label = scanning ? "Score pending" : scanStatus.mode === "error" ? "Score unavailable" : "Not scanned";
+    const detail = scanning ? "Waiting for the AI report" : scanStatus.mode === "error" ? "Complete the AI scan to calculate a score" : "Run an AI scan to calculate a score";
+    return (
+      <section className="eqx-score-summary" data-state={scanStatus.mode} aria-label={label}>
+        <div className="eqx-score-ring eqx-score-ring--pending">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle className="eqx-score-track" cx="60" cy="60" r={RING_RADIUS} />
+          </svg>
+          <div>
+            <strong data-testid="inclusion-score" aria-hidden="true">—</strong>
+            <span>{label}</span>
+          </div>
+        </div>
+        <div className="eqx-score-benchmark eqx-score-benchmark--pending">
+          <span>{detail}</span>
+          {scanning && <strong>Analyzing</strong>}
+        </div>
+      </section>
+    );
+  }
+
   const animatedScore = useAnimatedScore(score, document);
   const band = scoreBand(animatedScore);
   const ringOffset = RING_CIRCUMFERENCE * (1 - animatedScore / 100);
@@ -365,7 +394,7 @@ function categoryDescriptor(category: Category): string {
 }
 
 function scanStatusLabel(status: DeepScanStatus): string {
-  if (status.mode === "scanning") return "Deep scan";
+  if (status.mode === "scanning") return "AI scanning";
   if (status.mode === "complete") return "Scan complete";
   if (status.mode === "error") return "Scan paused";
   return "Scan ready";

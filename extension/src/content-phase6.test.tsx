@@ -93,7 +93,8 @@ describe("AI content scan pipeline", () => {
 
     const shadow = await startScan();
     expect(shadow.querySelectorAll(".eqx-finding-row")).toHaveLength(0);
-    expect(shadow.textContent).toContain("AI is reviewing the visible page content");
+    expect(shadow.textContent).toContain("AI scan in progress");
+    expect(shadow.querySelector('[data-testid="inclusion-score"]')?.textContent).toBe("—");
     await vi.waitFor(() => expect(messaging.streamScan).toHaveBeenCalledOnce());
 
     await act(async () => callbacks!.onFinding(aiFinding));
@@ -103,6 +104,7 @@ describe("AI content scan pipeline", () => {
 
     await act(async () => callbacks!.onComplete());
     expect(shadow.textContent).toContain("Scan complete");
+    expect(shadow.querySelector('[data-testid="inclusion-score"]')?.textContent).toBe("82");
   });
 
   it("uses the one-shot response after a streaming transport failure", async () => {
@@ -138,12 +140,13 @@ describe("AI content scan pipeline", () => {
     const shadow = await startScan();
     await vi.waitFor(() => expect(shadow.textContent).toContain("Deep scan paused"));
     expect(shadow.querySelectorAll(".eqx-finding-row")).toHaveLength(0);
+    expect(shadow.textContent).toContain("Score unavailable");
 
     const retry = [...shadow.querySelectorAll<HTMLButtonElement>("button")]
       .find((button) => button.textContent === "Retry AI scan")!;
     await act(async () => retry.click());
     await vi.waitFor(() => expect(messaging.streamScan).toHaveBeenCalledTimes(2));
-    expect(shadow.textContent).toContain("Deep scan in progress");
+    expect(shadow.textContent).toContain("AI scan in progress");
 
     await act(async () => retryCallbacks!.onFinding(aiFinding));
     await act(async () => retryCallbacks!.onComplete());

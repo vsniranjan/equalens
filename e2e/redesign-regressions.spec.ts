@@ -48,14 +48,19 @@ for (const buddyStyle of ["orb", "minimal"] as const) {
   });
 }
 
-test("redesign-all waits for the complete scan instead of dropping pending findings", async ({ context, page }) => {
+test("redesign-all waits for the complete scan instead of dropping pending findings", async ({ context, page }, testInfo) => {
   let held: import("@playwright/test").Route | undefined;
   await context.route(`${API_ORIGIN}/scan`, (route) => { held = route; });
   await page.goto(DEMO_ORIGIN);
   await scanPage(page);
   await expect.poll(() => Boolean(held)).toBe(true);
+  await expect(page.locator(".eqx-panel-status")).toHaveText("AI scanning");
+  await expect(page.getByTestId("inclusion-score")).toHaveText("—");
+  await expect(page.locator(".eqx-deep-scan-progress")).toContainText("AI scan in progress");
+  await page.screenshot({ path: testInfo.outputPath("ai-scan-pending.png"), animations: "disabled" });
   await expect(page.getByRole("button", { name: "Redesign all", exact: true })).toBeDisabled();
   await held!.fulfill({ json: { findings: [baseFinding], summary: "Done" } });
+  await expect(page.getByTestId("inclusion-score")).not.toHaveText("—");
   await expect(page.getByRole("button", { name: "Redesign all", exact: true })).toBeEnabled();
 });
 
@@ -70,17 +75,23 @@ test("redesign-all changes every flagged area and compares every changed section
   await expect(page.locator(".eqx-panel-status")).toHaveText("Scan complete");
   await page.screenshot({ path: testInfo.outputPath("scan-desktop.png"), animations: "disabled" });
   await page.getByRole("button", { name: "Redesign all", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Keep change", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Approve change", exact: true }).first()).toBeVisible();
+  const reviewBox = await page.locator(".eqx-redesign-comparison").boundingBox();
+  expect.soft(reviewBox!.y).toBeGreaterThanOrEqual(12);
+  expect.soft(reviewBox!.y + reviewBox!.height).toBeLessThanOrEqual(988);
+  expect.soft(await page.locator(".eqx-redesign-comparison").evaluate((element) => element.scrollTop)).toBe(0);
   await page.screenshot({ path: testInfo.outputPath("preview-desktop.png"), animations: "disabled" });
   await expect.soft(page.locator(".eqx-redesign-original-snapshot")).toHaveCount(4);
   for (const width of [390, 768, 1440]) {
     await page.setViewportSize({ width, height: 844 });
     await page.locator("#configure").scrollIntoViewIfNeeded();
     await page.screenshot({ path: testInfo.outputPath(`preview-form-${width}.png`), animations: "disabled" });
-    await expect.soft(page.getByRole("button", { name: "Keep change", exact: true })).toBeInViewport();
+    await expect.soft(page.getByRole("button", { name: "Approve change", exact: true }).first()).toBeInViewport();
     expect.soft(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
-  await page.getByRole("button", { name: "Keep change", exact: true }).click();
+  for (let index = 0; index < demoFindings.length; index += 1) {
+    await page.getByRole("button", { name: "Approve change", exact: true }).first().click();
+  }
   await page.getByRole("button", { name: "Close findings panel" }).click();
   const brokenLabels = await page.locator("main [aria-labelledby]").evaluateAll((elements) => elements
     .filter((element) => element.getAttribute("aria-labelledby")!.split(/\s+/).some((id) => !document.getElementById(id)))
@@ -118,7 +129,7 @@ test("a button redesign applies accessibility attributes while retaining its cli
   const row = page.locator(".eqx-finding-row").filter({ hasText: finding.title });
   await row.locator(".eqx-finding-summary").click();
   await row.getByRole("button", { name: "Redesign this", exact: true }).click();
-  await page.getByRole("button", { name: "Keep change", exact: true }).click();
+  await page.getByRole("button", { name: "Approve change", exact: true }).click();
   await page.getByRole("button", { name: "Close findings panel" }).click();
   const button = page.getByRole("button", { name: "Open vehicle details", exact: true });
   // The injected target sits under the site's fixed header; keyboard activation

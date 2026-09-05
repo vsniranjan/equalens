@@ -204,21 +204,24 @@ describe("EquaLens overlay", () => {
     target.getBoundingClientRect = () => DOMRect.fromRect({ x: 80, y: 100, width: 500, height: 240 });
     document.body.append(target);
     const onPositionChange = vi.fn();
-    const onKeep = vi.fn();
-    const onRevert = vi.fn();
-    controller.showRedesignComparison({
+    const onApprove = vi.fn();
+    const onReject = vi.fn();
+    controller.showRedesignComparisons([{
       id: "preview",
       target,
       finding,
+      index: 1,
+      total: 1,
       rationale: "Expanded the body range.",
       changes: ["Preserved safety metrics"],
       scoreBefore: 82,
       scoreAfter: 100,
+      position: 50,
       onPositionChange,
       onRefresh: vi.fn(),
-      onKeep,
-      onRevert,
-    });
+      onApprove,
+      onReject,
+    }]);
 
     expect(shadow.textContent).toContain("82 → 100");
     expect(shadow.textContent).toContain("+18");
@@ -227,9 +230,9 @@ describe("EquaLens overlay", () => {
     await act(async () => before.click());
     expect(onPositionChange).toHaveBeenLastCalledWith(100);
     const keep = [...shadow.querySelectorAll<HTMLButtonElement>("button")]
-      .find((button) => button.textContent === "Keep change")!;
+      .find((button) => button.textContent === "Approve change")!;
     await act(async () => keep.click());
-    expect(onKeep).toHaveBeenCalledOnce();
-    expect(onRevert).not.toHaveBeenCalled();
+    expect(onApprove).toHaveBeenCalledOnce();
+    expect(onReject).not.toHaveBeenCalled();
   });
 });

@@ -375,8 +375,8 @@ Tasks:
    `{selector, tag, role, text (truncated), key attrs}` capped at 15 KB JSON
    (spec §2.6, §5 long-page row).
 2. Wire `POST /scan` through the background-worker streaming relay; parse
-   NDJSON `Finding`s as they arrive; append new hotspots live and recompute
-   the score per arrival.
+   NDJSON `Finding`s as they arrive and append new hotspots live. Keep the
+   score pending until the complete AI report arrives, then calculate it once.
 3. Fallback: if streaming is flaky, single-response mode (Phase 2 already
    supports it) and replace the result set with the completed AI report.
 
@@ -413,16 +413,18 @@ Tasks:
    (inclusive title options + body-dimension fit selector). Render into the
    page DOM (not shadow) with `eqx-` class namespace. The LLM rationale is
    still fetched and displayed — real AI narration over pre-built pixels.
-4. Before/After control from
-   `screen_3_redesign_result_with_before_after_slider/`: draggable divider
-   crossfading original-node snapshot vs new version + instant toggle;
-   "Keep change" (marks fixed → score counts up, e.g. 41 → 86 with "+45"
-   indicator per the mockup) and "Revert" (restores original node).
-5. "Redesign all" panel action: sequential Path B/A application with
-   staggered animation — this is the 60-second-demo beat 4 (spec §4.3).
+4. Target-bound Before/After controls based on
+   `screen_3_redesign_result_with_before_after_slider/`: give every changed
+   component its own draggable divider and pinned review surface. "Approve
+   change" keeps only that component; "Reject change" restores only that
+   component. Apply finding and score updates from the accepted subset after
+   all component decisions are complete.
+5. "Redesign all" panel action: sequential Path B/A preparation followed by
+   independent component review — this is the 60-second-demo beat 4 (§4.3).
 
 **Verify:** Full demo choreography spec §4.3 runs end-to-end on the deployed
-mock site: explain → scan → redesign all → slider → score 41→86 green.
+mock site: explain → scan → redesign all → independently approve and reject
+component changes → accepted score update.
 Path A alone verified on a real page (select marketing copy → rewrite →
 sanitized swap → revert works). Guardrail verified with a forced-failure
 fixture: feed the diff checker a rewrite that drops a `<select>` option and

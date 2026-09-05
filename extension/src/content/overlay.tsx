@@ -34,7 +34,7 @@ export interface OverlayController {
   setScanStatus(status: DeepScanStatus): void;
   setReportStatus(status: ReportExportStatus): void;
   setBuddyStyle(style: BuddyStyle): void;
-  showRedesignComparison(comparison: RedesignComparisonModel | null): void;
+  showRedesignComparisons(comparisons: readonly RedesignComparisonModel[]): void;
   setRedesignNotice(notice: RedesignNotice | null): void;
   openPanel(): void;
   closePanel(): void;
@@ -64,7 +64,7 @@ interface OverlayViewProps {
   scanStatus: DeepScanStatus;
   reportStatus: ReportExportStatus;
   buddyStyle: BuddyStyle;
-  redesignComparison: RedesignComparisonModel | null;
+  redesignComparisons: readonly RedesignComparisonModel[];
   redesignNotice: RedesignNotice | null;
   viewport: { width: number; height: number };
   document: Document;
@@ -110,7 +110,7 @@ export function mountOverlay(options: OverlayOptions = {}): OverlayController {
   let scanStatus: DeepScanStatus = { mode: "idle" };
   let reportStatus: ReportExportStatus = { mode: "idle" };
   let buddyStyle: BuddyStyle = "orb";
-  let redesignComparison: RedesignComparisonModel | null = null;
+  let redesignComparisons: RedesignComparisonModel[] = [];
   let redesignNotice: RedesignNotice | null = null;
   let destroyed = false;
 
@@ -136,7 +136,7 @@ export function mountOverlay(options: OverlayOptions = {}): OverlayController {
         scanStatus={scanStatus}
         reportStatus={reportStatus}
         buddyStyle={buddyStyle}
-        redesignComparison={redesignComparison}
+        redesignComparisons={redesignComparisons}
         redesignNotice={redesignNotice}
         viewport={{ width: view.innerWidth, height: view.innerHeight }}
         document={document}
@@ -185,7 +185,7 @@ export function mountOverlay(options: OverlayOptions = {}): OverlayController {
       updateFindings(nextFindings);
       panelOpen = true;
       scanRevision += 1;
-      scanStatus = { mode: "idle" };
+      scanStatus = { mode: "scanning" };
       reportStatus = { mode: "idle" };
       render();
     },
@@ -205,8 +205,8 @@ export function mountOverlay(options: OverlayOptions = {}): OverlayController {
       buddyStyle = nextStyle;
       render();
     },
-    showRedesignComparison(nextComparison) {
-      redesignComparison = nextComparison;
+    showRedesignComparisons(nextComparisons) {
+      redesignComparisons = [...nextComparisons];
       render();
     },
     setRedesignNotice(nextNotice) {
@@ -222,7 +222,7 @@ export function mountOverlay(options: OverlayOptions = {}): OverlayController {
       render();
     },
     refreshPosition() {
-      redesignComparison?.onRefresh();
+      redesignComparisons.forEach((comparison) => comparison.onRefresh());
       render();
     },
     destroy() {
@@ -251,7 +251,7 @@ function OverlayView({
   scanStatus,
   reportStatus,
   buddyStyle,
-  redesignComparison,
+  redesignComparisons,
   redesignNotice,
   viewport,
   document,
@@ -283,6 +283,7 @@ function OverlayView({
     return clamp(preferred, 12, viewport.width - width - 12) - position.x;
   };
   const analysisWidth = Math.min(370, viewport.width - 24);
+  const activeRedesignComparison = closestVisibleComparison(redesignComparisons, viewport);
 
   useEffect(() => {
     if (menuOpen) firstAction.current?.focus();
@@ -323,7 +324,7 @@ function OverlayView({
           onRetry={onRetryScan}
         />
       )}
-      {redesignComparison && <RedesignComparison model={redesignComparison} viewport={viewport} />}
+      {activeRedesignComparison && <RedesignComparison key={activeRedesignComparison.id} model={activeRedesignComparison} viewport={viewport} />}
       {redesignNotice && <RedesignNoticeView notice={redesignNotice} onDismiss={onDismissRedesignNotice} />}
       {inspecting && <div className="eqx-inspection-status" role="status">Choose an element. Press Escape to cancel.</div>}
       {!inspecting && pageNotice && <div className="eqx-inspection-status" role="status">{pageNotice}</div>}
@@ -389,6 +390,14 @@ function OverlayView({
       </div>
     </>
   );
+}
+
+function closestVisibleComparison(comparisons: readonly RedesignComparisonModel[], viewport: { width: number; height: number }): RedesignComparisonModel | null {
+  const center = viewport.height / 2;
+  return comparisons
+    .map((comparison) => ({ comparison, rect: comparison.target.getBoundingClientRect() }))
+    .filter(({ rect }) => rect.bottom > 0 && rect.top < viewport.height)
+    .sort((left, right) => Math.abs((left.rect.top + left.rect.bottom) / 2 - center) - Math.abs((right.rect.top + right.rect.bottom) / 2 - center))[0]?.comparison ?? null;
 }
 
 const MenuAction = React.forwardRef<HTMLButtonElement, React.PropsWithChildren<{ onClick: () => void }>>(

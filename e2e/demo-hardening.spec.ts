@@ -18,7 +18,7 @@ const demoFindings: Finding[] = [
   { ...finding, id: "title", selector: "#configure select", title: "Restricted title options", category: "language", severity: "language" },
 ];
 
-test("redesign preview can be reverted, kept, and submitted without losing existing form values", async ({ context, page }) => {
+test("redesign changes can be approved or rejected independently without losing form values", async ({ context, page }) => {
   await context.route(`${API_ORIGIN}/scan`, (route) => route.fulfill({ json: { findings: demoFindings, summary: "Done" } }));
   await context.route(`${API_ORIGIN}/redesign`, (route) => route.fulfill({ json: {
     rewritten_html: route.request().postDataJSON().outerHTML.replace("One-size-fits-all sport seats", "Adjustable sport seats for a broad range of body dimensions"), rationale: "Preserve all existing capabilities and expand fit.", changes: ["Expanded fit"],
@@ -33,19 +33,27 @@ test("redesign preview can be reverted, kept, and submitted without losing exist
   const score = String(calculateInclusionScore(demoFindings.map(({ severity }) => severity)));
   await expect(page.getByTestId("inclusion-score")).toHaveText(score);
   await page.getByRole("button", { name: "Redesign all", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Keep change", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Before", exact: true }).click();
-  await expect(page.getByRole("slider", { name: "Original design visibility" })).toHaveValue("100");
-  await page.getByRole("button", { name: "After", exact: true }).click();
-  await expect(page.getByRole("slider", { name: "Original design visibility" })).toHaveValue("0");
-  await page.getByRole("button", { name: "Revert", exact: true }).click();
-  expect(await page.locator("[data-equalens-variant]").evaluateAll((elements) => elements.map((element) => element.innerHTML.replaceAll("reveal is-visible", "reveal")))).toEqual(original);
+  await expect(page.getByRole("button", { name: "Approve change", exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Before", exact: true }).first().click();
+  await expect(page.getByRole("slider").first()).toHaveValue("100");
+  await page.getByRole("button", { name: "After", exact: true }).first().click();
+  await expect(page.getByRole("slider").first()).toHaveValue("0");
+  await page.getByRole("button", { name: "Reject change", exact: true }).first().click();
+  await page.getByRole("button", { name: "Approve change", exact: true }).first().click();
+  await page.getByRole("button", { name: "Reject change", exact: true }).first().click();
+  await page.getByRole("button", { name: "Approve change", exact: true }).first().click();
+  const partiallyReviewed = await page.locator("[data-equalens-variant]").evaluateAll((elements) => elements.map((element) => element.innerHTML.replaceAll("reveal is-visible", "reveal")));
+  expect(partiallyReviewed[0]).toBe(original[0]);
+  expect(partiallyReviewed[1]).not.toBe(original[1]);
+  expect(partiallyReviewed[2]).toBe(original[2]);
   await expect(page.locator('[name="firstName"]')).toHaveValue("Alex");
-  await expect(page.getByTestId("inclusion-score")).toHaveText(score!);
+  await expect(page.getByTestId("inclusion-score")).not.toHaveText(score);
+  await expect(page.getByTestId("inclusion-score")).not.toHaveText("100");
   await page.locator("form").evaluate((form: HTMLFormElement) => form.requestSubmit());
   await expect(page.locator("[data-confirmation]")).toBeVisible();
   await page.getByRole("button", { name: "Redesign all", exact: true }).click();
-  await page.getByRole("button", { name: "Keep change", exact: true }).click();
+  await page.getByRole("button", { name: "Approve change", exact: true }).first().click();
+  await page.getByRole("button", { name: "Approve change", exact: true }).first().click();
   await expect(page.getByTestId("inclusion-score")).toHaveText("100");
   await page.getByRole("button", { name: "Close findings panel" }).click();
   await expect(page.locator('[name="firstName"]')).toHaveValue("Alex");
@@ -134,7 +142,8 @@ for (const status of [401, 429, 502, 504]) {
     await scanPage(page);
     await expect(page.getByText("Deep scan paused", { exact: true })).toBeVisible();
     await expect(page.locator(".eqx-finding-row")).toHaveCount(0);
-    await expect(page.getByTestId("inclusion-score")).toHaveText("100");
+    await expect(page.getByTestId("inclusion-score")).toHaveText("—");
+    await expect(page.locator(".eqx-score-summary")).toContainText("Score unavailable");
     fail = false;
     await page.getByRole("button", { name: "Retry AI scan" }).click();
     await expect(page.locator(".eqx-panel-status")).toHaveText("Scan complete");
